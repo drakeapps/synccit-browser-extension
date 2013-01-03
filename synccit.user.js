@@ -30,7 +30,7 @@ var array = new Array();
 // we don't actually add any visited links to your history
 // just change the color of the link
 // .synccit-comment is the same as .newComments from RES
-GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;}");
+GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
 
 
 // get array of all links
@@ -136,49 +136,18 @@ function markLink(link) {
 	//$x('//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," id-t3_15u3d9 ")]/div[2]/p[1]/a');
 	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
 	//console.log(xpath);
+	////*[@id="siteTable"]/div[1]/div[2]/p[1]/a
 
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-	console.log(l.snapshotItem(0).innerHTML);
+	//console.log(l.snapshotItem(0).innerHTML);
 	var element = l.snapshotItem(0);
 	//element.className += '.synccit-read'; // adding the class doesn't seem to let it overwrite style even with !important
-										  // d'oh needed dot at front. replacing classname breaks RES too
-	element.style.color = "#551a8b";	  // nevermind still didn't work. just changing the style does though							  
-
-	//console.log($(classID).contents());
-	/*
-	var href = $(classID).find('a').css("font-size", "300%");
-	//var href = $(classID).find('div').
-	//console.log(href);
-
-
-	var found = false;
-	var elem = $(classID);
-
-	while(!found) {
-		elem = elem.next();
-		var c = elem.attr('class');
-		console.log(c);
-		if(c.indexOf('title') !== -1) {
-			found = true;
-		}
+										  // d'oh needed dot at front. replacing classname breaks RES 
+	if(element != null) { // seems on self post this will end up null or something. not sure why
+		element.style.color = "#551a8b";	  // nevermind still didn't work. just changing the style does though	
 	}
+							  
 
-	$(classID).find('a').each(
-		function (i, obj) {
-			console.log(i);
-			if(obj.attr('class').indexOf('title')) {
-				console.log('modified link');
-				obj.css('font-size', '500%');
-			}
-		});
-	
-
-	for(var i=0; i<href.length; i++) {
-		console.log(href[i].href);
-	}*/
-
-	//var doc = document.getElementsByClassName(classID);
-	//console.log(doc);
 
 	
 
@@ -190,17 +159,184 @@ function markComments(link, count) {
 	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/ul/li[1]/a';
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	var element = l.snapshotItem(0);
-	var commentcount = element.innerHTML.split(' ')[0];
-	console.log(element.innerHTML);
-	var newcomments = commentcount - count;
-	element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-comment">(' + newcomments + ' new)</span>';
-	// //*[@id="siteTable"]/div[1]/div[2]/ul/li[1]/a
+	if(element != null) {
+		var commentcount = element.innerHTML.split(' ')[0];
+		//console.log(element.innerHTML);
+		var newcomments = commentcount - count;
+		if(newcomments == 0) {
+			element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-nonew">(' + newcomments + ' new)</span>';
+		} else {
+			element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-comment">(' + newcomments + ' new)</span>';
+		}
+		
+	}
+	
 
-
-	// span 
 }
 
 
 function updateOnClicks() {
+	// this is familiar. maybe add the onclicks at the beginning to prevent looping through twice
+	$('.thing').each(
+		function(i, obj) {
+			// really just need to pull in data-fullname, but can't seem to get that to work
+			// tried .attr('data-fullname') with no luck, even though RES seems to do that
+			// can split and search the class
+			var string = $(obj).attr('class');
+			var sp = string.split(' ');
+			//console.log(string);
+			//var id = '';
+			for(var j=0; j<sp.length; j++) {
+				//console.log(sp[i]);
+				if(sp[j].substr(0,3) == "id-") {
+					//console.log('found ' + sp[i]);
+					var simple = sp[j].split('_');
+					// length 6 to prevent trying to check all the comments
+					// need to do better searching
+					if(simple.length > 1 && simple[1].length == 6) {
+						//array[i] = simple[1];
+						var id = simple[1];
+						var classID = "id-t3_" + id;
+						//console.log(classID);
+						var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
+						//console.log(xpath);
+						var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+						var element = l.snapshotItem(0);
+						if(element == null) {
+							return;
+						}
+						var href = element.href;
+						// I believe this is picking up the sidebar links?
+						if(element != null) {
+							//console.log(element);
+							element.onclick = function () {
+								clickedLink(id);
+							};
+						
+						} else {
+							//console.log("element null");
+						}
+
+						//  //*[@id="siteTable"]/div[23]/div[2]/a
+
+						var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/a';
+						var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+						var expando = l.snapshotItem(0);
+						if(expando != null) {
+							expando.onclick = function() {
+								//console.log('found expando');
+								clickedLink(id);
+							}
+						}
+						
+						var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/ul/li[1]/a';
+						var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+						var comm = l.snapshotItem(0);
+						if(comm != null) {
+							var commentcount = comm.innerHTML.split(' ')[0];
+							// self post
+							console.log()
+							if(href == comm.href) {
+								//console.log("found self post");
+								comm.onclick = function () {
+									//clickedLink(id);
+									clickedSelf(id,commentcount);
+								}
+								element.onclick = function() {
+									clickedSelf(id,commentcount);
+								}
+							} else {
+								comm.onclick = function () {
+									clickedComment(id,commentcount);
+								}
+							}
+							
+						}
+						
+
+
+					}
+				}
+			}
+			//array[i] = id;
+			//console.log(array[i]);
+	});
 
 }
+
+function clickedLink(link) {
+	
+	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=update" + "&links=" + link;
+
+	GM_xmlhttpRequest({
+	  method: "POST",
+	  url: api,
+	  data: datastring,
+	  headers: {
+	    "Content-Type": "application/x-www-form-urlencoded"
+	  },
+	  onload: function(response) {
+	    /*if (response.responseText.indexOf("Logged in as") > -1) {
+	      location.href = "http://www.example.net/dashboard";
+	    }*/
+		
+		console.log(response.responseText);
+		return true;
+
+		//parseLinks(response.responseText);
+
+	  }
+	});
+
+	
+
+}
+
+function clickedComment(link, count) {
+	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=update" + "&comments=" + link + ":" + count;
+
+	GM_xmlhttpRequest({
+	  method: "POST",
+	  url: api,
+	  data: datastring,
+	  headers: {
+	    "Content-Type": "application/x-www-form-urlencoded"
+	  },
+	  onload: function(response) {
+	    /*if (response.responseText.indexOf("Logged in as") > -1) {
+	      location.href = "http://www.example.net/dashboard";
+	    }*/
+		
+		console.log(response.responseText);
+		return true;
+		//parseLinks(response.responseText);
+
+	  }
+	});
+
+}
+
+function clickedSelf(link, count) {
+	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=update" + "&links=" + link + "&comments=" + link + ":" + count;
+
+	GM_xmlhttpRequest({
+	  method: "POST",
+	  url: api,
+	  data: datastring,
+	  headers: {
+	    "Content-Type": "application/x-www-form-urlencoded"
+	  },
+	  onload: function(response) {
+	    /*if (response.responseText.indexOf("Logged in as") > -1) {
+	      location.href = "http://www.example.net/dashboard";
+	    }*/
+		
+		console.log(response.responseText);
+		return true;
+		//parseLinks(response.responseText);
+
+	  }
+	});
+}
+
+
