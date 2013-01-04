@@ -20,73 +20,161 @@ var auth = "6bqv16";
 
 var api = "http://localhost/rsync/api/api.php";
 
+// chrome doesn't support this anymore. HTML5 way now
+//var username = GM_getValue("username");
+//var auth = GM_getValue("auth");
+//var api = GM_getValue("api");
+
+var username = localStorage['username'];
+var auth = localStorage['auth'];
+var api = localStorage['api'];
 
 var devname = "synccit.user.js,v1.0";
 
-var array = new Array();
+
+// this is quite possibly the most infuriating thing i've ever seen
+// log username. undefined
+// is username undefined? no
+// also, i can't get my form to show up without fucking everything up
+
+//console.log(username);
+//console.log(auth);
+//console.log(api);
+
+if(localStorage['synccit-link'] == "undefined") {
+	localStorage['synccit-link'] = "";
+}
+if(localStorage['synccit-comment'] == "undefined") {
+	localStorage['synccit-comment'] = "";
+}
+if(localStorage['synccit-self'] == "undefined") {
+	localStorage['synccit-self'] = "";
+}//
+
+if(username == undefined || username == "undefined") {
+	if(localStorage['api'] == undefined) {
+		console.log('api undefined');
+		localStorage['api'] = "http://api.synccit.com/api.php";
+	}
+	showPage();
+	//console.log("username undefined");
+}
+
+else {
+
+	//console.log("username not undefined");
+	//console.log('we doin this shit');
+
+	var array = new Array();
 
 
-// add read link color
-// we don't actually add any visited links to your history
-// just change the color of the link
-// .synccit-comment is the same as .newComments from RES
-GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
+	// add read link color
+	// we don't actually add any visited links to your history
+	// just change the color of the link
+	// .synccit-comment is the same as .newComments from RES
+	GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
 
+	//clickedLink("15x1jp");
 
-// get array of all links
-$('.thing').each(
-	function(i, obj) {
-		// really just need to pull in data-fullname, but can't seem to get that to work
-		// tried .attr('data-fullname') with no luck, even though RES seems to do that
-		// can split and search the class
-		var string = $(obj).attr('class');
-		var sp = string.split(' ');
-		//console.log(string);
-		var id = '';
-		for(var j=0; j<sp.length; j++) {
-			//console.log(sp[i]);
-			if(sp[j].substr(0,3) == "id-") {
-				//console.log('found ' + sp[i]);
-				var simple = sp[j].split('_');
-				// length 6 to prevent trying to check all the comments
-				// need to do better searching
-				if(simple.length > 1 && simple[1].length == 6) {
-					array[i] = simple[1];
-				}
+	// seems as if server response is slower, so can't get the request done in time
+	// this will now just store the link until next time you go to reddit
+	// so times might be slow, or really slow
+	// there probably is a better way, but I don't know it off the top of my head
+	if(!(localStorage['synccit-link'] == undefined || localStorage['synccit-link'] == "")) {
+		console.log(localStorage['synccit-link']);
+		var array = localStorage['synccit-link'].split(',');
+		for(var i=0; i<array.length; i++) {
+			if(array[i] != "") {
+				clickedLink(array[i]);
 			}
 		}
-		//array[i] = id;
-		//console.log(array[i]);
-});
+		//clickedLink(localStorage['synccit-link']);
+		//localStorage['synccit-link'] = undefined;
+	}
 
-//console.log(array.toString());
+	if(!(localStorage['synccit-comment'] == undefined || localStorage['synccit-comment'] == "")) {
+		console.log(localStorage['synccit-comment']);
+		var array = localStorage['synccit-comment'].split(',');
+		for(var i=0; i<array.length; i++) {
+			if(array[i] != "") {
+				var sp = array[i].split(':');
+				clickedComment(sp[0], sp[1]);
+			}
+		}
+		//var sp = localStorage['synccit-comment'].split(':');
+		//clickedComment(sp[0], sp[1]);
+		//localStorage['synccit-comment'] = undefined;
+	}
 
-var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=read" + "&links=" + array.toString();
+	if(!(localStorage['synccit-self'] == undefined || localStorage['synccit-self'] == "")) {
+		console.log(localStorage['synccit-self']);
+		var array = localStorage['synccit-self'].split(',');
+		for(var i=0; i<array.length; i++) {
+			if(array[i] != "") {
+				var sp = array[i].split(':');
+				clickedSelf(sp[0], sp[1]);
+			}
+		}
+		//var sp = localStorage['synccit-self'].split(':');
+		//clickedSelf(sp[0], sp[1]);
+		//localStorage['synccit-self'] = undefined;
+	}
 
-//console.log(datastring);
+	// get array of all links
+	$('.thing').each(
+		function(i, obj) {
+			// really just need to pull in data-fullname, but can't seem to get that to work
+			// tried .attr('data-fullname') with no luck, even though RES seems to do that
+			// can split and search the class
+			var string = $(obj).attr('class');
+			var sp = string.split(' ');
+			//console.log(string);
+			var id = '';
+			for(var j=0; j<sp.length; j++) {
+				//console.log(sp[i]);
+				if(sp[j].substr(0,3) == "id-") {
+					//console.log('found ' + sp[i]);
+					var simple = sp[j].split('_');
+					// length 6 to prevent trying to check all the comments
+					// need to do better searching
+					if(simple.length > 1 && simple[1].length == 6) {
+						array[i] = simple[1];
+					}
+				}
+			}
+			//array[i] = id;
+			//console.log(array[i]);
+	});
 
-// download visited links
-// this is using the regular mode, not json
-// didn't have json implemented yet server side
-GM_xmlhttpRequest({
-  method: "POST",
-  url: api,
-  data: datastring,
-  headers: {
-    "Content-Type": "application/x-www-form-urlencoded"
-  },
-  onload: function(response) {
-    /*if (response.responseText.indexOf("Logged in as") > -1) {
-      location.href = "http://www.example.net/dashboard";
-    }*/
-	
-	//console.log(response.responseText);
+	//console.log(array.toString());
 
-	parseLinks(response.responseText);
+	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=read" + "&links=" + array.toString();
 
-  }
-});
+	//console.log(datastring);
 
+	// download visited links
+	// this is using the regular mode, not json
+	// didn't have json implemented yet server side
+	GM_xmlhttpRequest({
+	  method: "POST",
+	  url: api,
+	  data: datastring,
+	  headers: {
+	    "Content-Type": "application/x-www-form-urlencoded"
+	  },
+	  onload: function(response) {
+	    /*if (response.responseText.indexOf("Logged in as") > -1) {
+	      location.href = "http://www.example.net/dashboard";
+	    }*/
+		
+		//console.log(response.responseText);
+
+		parseLinks(response.responseText);
+
+	  }
+	});
+
+}
 
 
 function parseLinks(links) {
@@ -163,7 +251,7 @@ function markComments(link, count) {
 		var commentcount = element.innerHTML.split(' ')[0];
 		//console.log(element.innerHTML);
 		var newcomments = commentcount - count;
-		if(newcomments == 0) {
+		if(newcomments < 1) { // was just == 0, but occasionally will have less than 0 links. don't need an alert for -2 new comments
 			element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-nonew">(' + newcomments + ' new)</span>';
 		} else {
 			element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-comment">(' + newcomments + ' new)</span>';
@@ -225,7 +313,7 @@ function updateOnClicks() {
 						if(expando != null) {
 							expando.onclick = function() {
 								//console.log('found expando');
-								clickedLink(id);
+								addLink(id);
 							}
 						}
 						
@@ -240,14 +328,14 @@ function updateOnClicks() {
 								//console.log("found self post");
 								comm.onclick = function () {
 									//clickedLink(id);
-									clickedSelf(id,commentcount);
+									addSelf(id,commentcount);
 								}
 								element.onclick = function() {
-									clickedSelf(id,commentcount);
+									addSelf(id,commentcount);
 								}
 							} else {
 								comm.onclick = function () {
-									clickedComment(id,commentcount);
+									addComment(id,commentcount);
 								}
 							}
 							
@@ -264,10 +352,49 @@ function updateOnClicks() {
 
 }
 
+function addLink(link) {
+	if(localStorage['synccit-link'] == "") {
+		localStorage['synccit-link'] = link;
+	} else {
+		var array = localStorage['synccit-link'].split(',');
+		array[array.length] = link;
+		localStorage['synccit-link'] = array.toString();
+		clickedLink(link); // probably won't load since page is unloading. might work though
+		//localStorage[link] = "1,-1";
+	}
+	
+}
+
+function addComment(link, count) {
+	if(localStorage['synccit-comment'] == "") {
+		localStorage['synccit-comment'] = link + ":" + count;
+	} else {
+		var array = localStorage['synccit-comment'].split(',');
+		array[array.length] = link+":"+count;
+		localStorage['synccit-comment'] = array.toString();
+		clickedComment(link, count);
+		//localStorage[link] = "0,"+count;
+	}
+	
+}
+
+function addSelf(link, count) {
+	if(localStorage['synccit-self'] == "") {
+		localStorage['synccit-self'] = link + ":" + count;
+	} else {
+		var array = localStorage['synccit-link'].split(',');
+		array[array.length] = link+":"+count;
+		localStorage['synccit-self'] = array.toString();
+		clickedSelf(link, count);
+		//localStorage[link] = "1,"+count;
+	}
+	
+}
+
 function clickedLink(link) {
 	
 	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=update" + "&links=" + link;
-
+	//console.log(datastring);
 	GM_xmlhttpRequest({
 	  method: "POST",
 	  url: api,
@@ -281,6 +408,22 @@ function clickedLink(link) {
 	    }*/
 		
 		console.log(response.responseText);
+		var array = localStorage['synccit-link'].split(',');
+		if(array.length < 2) {
+			localStorage['synccit-link'] = "";
+		} else {
+			for(var i=0; i<array.length; i++) {
+				//console.log(array[i]);
+				if(array[i] == link) {
+					//console.log('link presplice array: '+array.toString());
+					//console.log('link splice '+link);
+					array = array.splice(i, 1);
+					//console.log('link postsplice array: '+array.toString());
+					//break;
+				}
+			}
+			localStorage['synccit-link'] = array.toString();
+		}
 		return true;
 
 		//parseLinks(response.responseText);
@@ -308,6 +451,24 @@ function clickedComment(link, count) {
 	    }*/
 		
 		console.log(response.responseText);
+		var array = localStorage['synccit-comment'].split(',');
+		console.log(array.toString());
+		if(array.length < 2) {
+			localStorage['synccit-comment'] = "";
+		} else {
+			for(var i=0; i<array.length; i++) {
+				var sp = array[i].split(':');
+				//console.log(sp[0]);
+				if(sp[0] == link) {
+					//console.log('comment presplice array: '+array.toString());
+					//console.log('comment splice '+link);
+					array = array.splice(i, 1);
+					//console.log('comment postsplice array: '+array.toString());
+					//break;
+				}
+			}
+			localStorage['synccit-comment'] = array.toString();
+		}
 		return true;
 		//parseLinks(response.responseText);
 
@@ -332,11 +493,61 @@ function clickedSelf(link, count) {
 	    }*/
 		
 		console.log(response.responseText);
+		var array = localStorage['synccit-self'].split(',');
+		if(array.length < 2) {
+			localStorage['synccit-self'] = "";
+		} else {
+			for(var i=0; i<array.length; i++) {
+				var sp = array[i].split(':');
+				//console.log(sp[0]);
+				if(sp[0] == link) {
+					//console.log('self presplice array: '+array.toString());
+					//console.log('self splice '+link);
+					array = array.splice(i, 1);
+					//console.log('self postsplice array: '+array.toString());
+					//break;
+				}
+			}
+			localStorage['synccit-self'] = array.toString();
+		}
 		return true;
 		//parseLinks(response.responseText);
 
 	  }
 	});
+}
+
+function showPage() {
+	if(username == undefined)
+		username = '';
+	if(auth == undefined)
+		auth = '';
+	if(api == undefined)
+		api = 'http://api.synccit.com/api.php';
+	// RES is not playing nice with this. it adds content to the page
+	// actually not RES. javascript/html/everyhting just doesn't play nice
+	document.getElementById('siteTable').innerHTML = '<div id="synccit-form"> \
+	<h3>username: </h3><br> \
+	<input type="text" id="username" value="'+username+'" ><br> \
+	<h3>auth code: </h3><br><input type="text" id="auth" value="'+auth+'" ><br><br> \
+	<a href="javascript: \
+	localStorage[\'username\'] = document.getElementById(\'username\').value; \
+	 localStorage[\'auth\'] = document.getElementById(\'auth\').value; \
+	localStorage[\'api\'] = document.getElementById(\'api\').value; \
+	window.location.reload(); \
+	 " onclick="" id="save" ><h2>save</h2></a><br><br><br> \
+	<h3>api location (default http://api.synccit.com/api.php)</h3><br> \
+	<input type="text" id="api" value="'+api+'"><br><br> \
+	<h2><a href="http://synccit.com/register.php" target="_blank">signup</a></h2><br><br> \
+	<em>to get rid of this, put something in username and auth or uninstall synccit extension/script</em> \
+	</div>';
+}
+
+function saveValues() {
+	console.log("saving...");
+	localStorage['username'] = document.getElementById('username').text;
+	localStorage['auth'] = document.getElementById('auth').text;
+	localStorage['api'] = document.getElementById('api').text;
 }
 
 
