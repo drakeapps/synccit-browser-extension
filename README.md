@@ -15,7 +15,6 @@ To use/make Chrome extension:
 
 >- synccit.user.js
 >- manifest.json
->- jquery-1.8.3.min.js
 
 To use:
 
@@ -25,7 +24,7 @@ To use:
 To create .crx:
 
 1. From chrome://extensions, turn on developer mode
-3. Pack extension, choosing this folder
+2. Pack extension, choosing this folder
 
 
 
@@ -37,9 +36,6 @@ To make Firefox extension:
 
 LICENSE:
 
-jquery-1.8.3.min.js under MIT license by jQuery
-
-Everything else under GPL 3:
 
 
     This program is free software: you can redistribute it and/or modify

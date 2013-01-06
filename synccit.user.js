@@ -2,23 +2,30 @@
 // ==UserScript==
 // @name          synccit 
 // @namespace     http://synccit.com
-// @description   syncs your vistied pages with synccit.com
+// @description   syncs your vistied pages and read comments with synccit.com
 // @copyright     2012, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
 // @version		  1.0
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
-// @require       http://code.jquery.com/jquery-latest.js
-// @download	  http://synccit.com/latest/synccit.user.js
+// @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
+// @updateURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
 // ==/UserScript==
 // 
 
-// these will be set by a configuration page
-var username = "james";
-var auth = "6bqv16";
+// fix for firefox
+// got nothing
+// firefox gives error of $ not defined
+// seems like there are only 2 things that really depend on jquery
+// i'll just try to get rid of them
+// wtf. just reddit.com is giving the error. not my script. reinstalling firefox fixed it. hcalk it up to weird firefox glitch
+// whatever. getting rid of the very small part of jquery i used is probably better
+//this.$ = this.jQuery = jQuery.noConflict(true);
+//this.$ = window.$;
+//this.$ = unsafeWindow.$;
 
-var api = "http://localhost/rsync/api/api.php";
+
 
 // chrome doesn't support this anymore. HTML5 way now
 //var username = GM_getValue("username");
@@ -28,6 +35,8 @@ var api = "http://localhost/rsync/api/api.php";
 var username = localStorage['username'];
 var auth = localStorage['auth'];
 var api = localStorage['api'];
+
+//console.log(username + ' '+ auth + ' ' + api);
 
 var devname = "synccit.user.js,v1.0";
 
@@ -41,13 +50,13 @@ var devname = "synccit.user.js,v1.0";
 //console.log(auth);
 //console.log(api);
 
-if(localStorage['synccit-link'] == "undefined") {
+if(localStorage['synccit-link'] == "undefined" || localStorage['synccit-link'] == undefined ) {
 	localStorage['synccit-link'] = "";
 }
-if(localStorage['synccit-comment'] == "undefined") {
+if(localStorage['synccit-comment'] == "undefined" || localStorage['synccit-comment'] == undefined ) {
 	localStorage['synccit-comment'] = "";
 }
-if(localStorage['synccit-self'] == "undefined") {
+if(localStorage['synccit-self'] == "undefined" || localStorage['synccit-self'] == undefined ) {
 	localStorage['synccit-self'] = "";
 }//
 
@@ -121,30 +130,43 @@ else {
 	}
 
 	// get array of all links
-	$('.thing').each(
-		function(i, obj) {
+	// xpath for div
+	// //*[@id="siteTable"]/div[1]
+	var xpath = '//*[@id="siteTable"]/div';
+	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+	var k = 0;
+
+	for(var i=0; i<l.snapshotLength; i++) {
+
+	//$('.thing').each(
+		//function(i, obj) {
 			// really just need to pull in data-fullname, but can't seem to get that to work
 			// tried .attr('data-fullname') with no luck, even though RES seems to do that
 			// can split and search the class
-			var string = $(obj).attr('class');
-			var sp = string.split(' ');
-			//console.log(string);
-			var id = '';
-			for(var j=0; j<sp.length; j++) {
-				//console.log(sp[i]);
-				if(sp[j].substr(0,3) == "id-") {
-					//console.log('found ' + sp[i]);
-					var simple = sp[j].split('_');
-					// length 6 to prevent trying to check all the comments
-					// need to do better searching
-					if(simple.length > 1 && simple[1].length == 6) {
-						array[i] = simple[1];
-					}
+		var elm = l.snapshotItem(i);
+		var string = elm.className;
+
+		//var string = $(obj).attr('class');
+		var sp = string.split(' ');
+		//console.log(string);
+		var id = '';
+		for(var j=0; j<sp.length; j++) {
+			//console.log(sp[i]);
+			if(sp[j].substr(0,3) == "id-") {
+				//console.log('found ' + sp[i]);
+				var simple = sp[j].split('_');
+				// length 6 to prevent trying to check all the comments
+				// need to do better searching
+				if(simple.length > 1 && simple[1].length == 6) {
+					array[k++] = simple[1];
 				}
 			}
+		}
 			//array[i] = id;
 			//console.log(array[i]);
-	});
+		//}   //);
+	}
 
 	//console.log(array.toString());
 
@@ -234,11 +256,7 @@ function markLink(link) {
 	if(element != null) { // seems on self post this will end up null or something. not sure why
 		element.style.color = "#551a8b";	  // nevermind still didn't work. just changing the style does though	
 	}
-							  
-
-
-	
-
+						
 
 }
 
@@ -265,91 +283,111 @@ function markComments(link, count) {
 
 function updateOnClicks() {
 	// this is familiar. maybe add the onclicks at the beginning to prevent looping through twice
-	$('.thing').each(
-		function(i, obj) {
-			// really just need to pull in data-fullname, but can't seem to get that to work
-			// tried .attr('data-fullname') with no luck, even though RES seems to do that
-			// can split and search the class
-			var string = $(obj).attr('class');
-			var sp = string.split(' ');
-			//console.log(string);
-			//var id = '';
-			for(var j=0; j<sp.length; j++) {
-				//console.log(sp[i]);
-				if(sp[j].substr(0,3) == "id-") {
-					//console.log('found ' + sp[i]);
-					var simple = sp[j].split('_');
-					// length 6 to prevent trying to check all the comments
-					// need to do better searching
-					if(simple.length > 1 && simple[1].length == 6) {
-						//array[i] = simple[1];
-						var id = simple[1];
-						var classID = "id-t3_" + id;
-						//console.log(classID);
-						var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
-						//console.log(xpath);
-						var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-						var element = l.snapshotItem(0);
-						if(element == null) {
-							return;
+	
+
+	var xpath = '//*[@id="siteTable"]/div';
+	var m = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+	var k = 0;
+
+	//console.log(m.snapshotLength);
+
+	// getting rid of $(.thing).each is causing problems
+	// seems like marking nearly random links as read
+	// actually it seems to be the last link everytime
+	// probably with the value id/commentcount not being only part of function
+	// and that's it. updateOnClicks now calls updateFunction a lot
+	// guess could've done '%s' % string for each call
+
+	for(var i=0; i<m.snapshotLength; i++) {
+		updateFunction(m.snapshotItem(i));
+	}
+
+}
+
+function updateFunction(elm) {
+	//var elm = m.snapshotItem(i);
+	var string = elm.className;
+	//console.log(string);
+	//var string = $(obj).attr('class');
+	var sp = string.split(' ');
+	//console.log(string);
+	//var id = '';
+	for(var j=0; j<sp.length; j++) {
+		//console.log(sp[i]);
+		if(sp[j].substr(0,3) == "id-") {
+			//console.log('found ' + sp[i]);
+			var simple = sp[j].split('_');
+			// length 6 to prevent trying to check all the comments
+			// need to do better searching
+			if(simple.length > 1 && simple[1].length == 6) {
+				//array[i] = simple[1];
+				var id = simple[1];
+				//console.log(id);
+				var classID = "id-t3_" + id;
+				//console.log(classID);
+				var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
+				//console.log(xpath);
+				var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+				var element = l.snapshotItem(0);
+				if(element != null) {
+					//return; // was $.each, so was function. now just loop. also == null return
+				//}
+					var href = element.href;
+					//console.log(href);
+					// I believe this is picking up the sidebar links?
+					if(element != null) {
+						//console.log(element);
+						element.onclick = function () {
+							clickedLink(id);
+						};
+					
+					} else {
+						//console.log("element null");
+					}
+
+					//  //*[@id="siteTable"]/div[23]/div[2]/a
+
+					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/a';
+					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+					var expando = l.snapshotItem(0);
+					if(expando != null) {
+						expando.onclick = function() {
+							//console.log('found expando');
+							addLink(id);
 						}
-						var href = element.href;
-						// I believe this is picking up the sidebar links?
-						if(element != null) {
-							//console.log(element);
-							element.onclick = function () {
-								clickedLink(id);
-							};
-						
+					}
+					
+					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/ul/li[1]/a';
+					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+					var comm = l.snapshotItem(0);
+					if(comm != null) {
+						var commentcount = comm.innerHTML.split(' ')[0];
+						// self post
+						// console.log()
+						if(href == comm.href) {
+							//console.log("found self post");
+							comm.onclick = function () {
+								//clickedLink(id);
+								addSelf(id,commentcount);
+							}
+							element.onclick = function() {
+								addSelf(id,commentcount);
+							}
 						} else {
-							//console.log("element null");
-						}
-
-						//  //*[@id="siteTable"]/div[23]/div[2]/a
-
-						var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/a';
-						var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-						var expando = l.snapshotItem(0);
-						if(expando != null) {
-							expando.onclick = function() {
-								//console.log('found expando');
-								addLink(id);
+							comm.onclick = function () {
+								addComment(id,commentcount);
 							}
 						}
 						
-						var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/ul/li[1]/a';
-						var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-						var comm = l.snapshotItem(0);
-						if(comm != null) {
-							var commentcount = comm.innerHTML.split(' ')[0];
-							// self post
-							console.log()
-							if(href == comm.href) {
-								//console.log("found self post");
-								comm.onclick = function () {
-									//clickedLink(id);
-									addSelf(id,commentcount);
-								}
-								element.onclick = function() {
-									addSelf(id,commentcount);
-								}
-							} else {
-								comm.onclick = function () {
-									addComment(id,commentcount);
-								}
-							}
-							
-						}
-						
-
-
 					}
 				}
-			}
-			//array[i] = id;
-			//console.log(array[i]);
-	});
+				
 
+
+			}
+		}
+	}
 }
 
 function addLink(link) {
@@ -452,7 +490,7 @@ function clickedComment(link, count) {
 		
 		console.log(response.responseText);
 		var array = localStorage['synccit-comment'].split(',');
-		console.log(array.toString());
+		//console.log(array.toString());
 		if(array.length < 2) {
 			localStorage['synccit-comment'] = "";
 		} else {
@@ -549,5 +587,6 @@ function saveValues() {
 	localStorage['auth'] = document.getElementById('auth').text;
 	localStorage['api'] = document.getElementById('api').text;
 }
+
 
 
