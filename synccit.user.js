@@ -40,6 +40,13 @@ var api = localStorage['api'];
 
 var devname = "synccit.user.js,v1.0";
 
+// add addStyle if doesn't exist
+// if doesn't have xmlHttpRequest, that's a whole other issue
+//if(navigator.userAgent.indexOf('Opera') != -1) {
+//if(!(typeof(GM_addStyle) == 'function')) {
+//	GM_addStyle=function(css){ document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(css)); }; 
+//}
+
 
 // this is quite possibly the most infuriating thing i've ever seen
 // log username. undefined
@@ -76,12 +83,16 @@ else {
 
 	var array = new Array();
 
+	addShowPage();
+
 
 	// add read link color
 	// we don't actually add any visited links to your history
 	// just change the color of the link
 	// .synccit-comment is the same as .newComments from RES
+	// changed to remove GM_addStyle to make opera compatible but it doesn't support cross site xmlhttprequest so it doesn't matter
 	GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
+	//document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }"));
 
 	//clickedLink("15x1jp");
 
@@ -555,6 +566,19 @@ function clickedSelf(link, count) {
 	});
 }
 
+function addShowPage() {
+	// /html/body/div[4]/div/div[1]/ul/li[6]/a
+	// this will replace the advertise link with synccit 
+	var xpath = "/html/body/div[4]/div/div[1]/ul/li[6]/a";
+	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+	var adlink = l.snapshotItem(0);
+	adlink.href="#";
+	adlink.onclick = function() {
+		showPage();
+	}
+	adlink.innerHTML = "synccit";
+}
+
 function showPage() {
 	if(username == undefined)
 		username = '';
@@ -579,6 +603,7 @@ function showPage() {
 	<h2><a href="http://synccit.com/register.php" target="_blank">signup</a></h2><br><br> \
 	<em>to get rid of this, put something in username and auth or uninstall synccit extension/script</em> \
 	</div>';
+	return false;
 }
 
 function saveValues() {

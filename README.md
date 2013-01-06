@@ -1,9 +1,10 @@
 SETUP:
 
-1. On reddit.com homepage, click floating settings emblem at top right of page
-2. Loads simple form with username and auth values
+1. On reddit.com, first page load will show settings page
+2. Fille in username and auth. username is username of synccit account. auth is device auth code from devices page on synccit.com
 3. (optional) Change api server if not using synccit.com (default is api.synccit.com/api.php)
-4. Save changes. This will reload the reddit homepage
+4. Save changes. This will reload the page
+5. To edit these settings later, click synccit link at bottom of a reddit page
 
 
 
