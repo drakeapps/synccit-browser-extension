@@ -12,6 +12,11 @@ synccit.user.js
 
 Greasemonkey userscript for use with Chrome, Firefox, etc.
 
+* It doesn't actually modify your browser history, just changes the color of the links.
+* The number of comments that are counted as read are based what it says on the page when you click the link.
+* If you're using RES, turning off new comment count is probably a good idea, otherwise you'll end up with 2 unread counts.
+
+
 To use/make Chrome extension:
 
 >- synccit.user.js

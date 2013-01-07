@@ -157,6 +157,7 @@ else {
 			// can split and search the class
 		var elm = l.snapshotItem(i);
 		var string = elm.className;
+		//console.log(elm.className);
 
 		//var string = $(obj).attr('class');
 		var sp = string.split(' ');
@@ -213,35 +214,38 @@ else {
 function parseLinks(links) {
 	if(links == "error: no links found" || links == "") {
 		console.log("no links found");
-		return false;
-	}
-
-	links = links.replace(/\n/g, "");
+		//return false;
+		// this killed updating the onclick. not sure what my plan was
+	} else {
+		links = links.replace(/\n/g, "");
 	//links = links.split("\n").join("");
 
-	var array = links.split(',');
+		var array = links.split(',');
 
-	for(var i=0; i<array.length - 1; i++) {
+		for(var i=0; i<array.length - 1; i++) {
 
-		var firstsplit = array[i].split(':');
-		var linkid = firstsplit[0];
-		var commenttime = firstsplit[2];
+			var firstsplit = array[i].split(':');
+			var linkid = firstsplit[0];
+			var commenttime = firstsplit[2];
 
-		var secondsplit = firstsplit[1].split(';');
-		var linktime = secondsplit[0];
-		var commentcount = secondsplit[1];
+			var secondsplit = firstsplit[1].split(';');
+			var linktime = secondsplit[0];
+			var commentcount = secondsplit[1];
 
-		if(linktime > 1) {
-			console.log("found read link " + linkid + "");
-			markLink(linkid);
+			if(linktime > 1) {
+				console.log("found read link " + linkid + "");
+				markLink(linkid);
+			}
+
+			if(commentcount > 0) {
+				console.log("found read comments for link " + linkid + " with " + commentcount + " read comments");
+				markComments(linkid, commentcount);
+			}
+
 		}
-
-		if(commentcount > 0) {
-			console.log("found read comments for link " + linkid + " with " + commentcount + " read comments");
-			markComments(linkid, commentcount);
-		}
-
 	}
+
+	
 
 	updateOnClicks();
 
@@ -347,15 +351,15 @@ function updateFunction(elm) {
 					var href = element.href;
 					//console.log(href);
 					// I believe this is picking up the sidebar links?
-					if(element != null) {
+					//if(element != null) {
 						//console.log(element);
-						element.onclick = function () {
-							clickedLink(id);
-						};
+					element.onclick = function () {
+						clickedLink(id);
+					};
 					
-					} else {
+					//} else {
 						//console.log("element null");
-					}
+					//}
 
 					//  //*[@id="siteTable"]/div[23]/div[2]/a
 
