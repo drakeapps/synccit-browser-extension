@@ -13,9 +13,14 @@
         "run_at": "document_end"
     } ],
     "converted_from_user_script": true,
-    "description":  "synccit chrome extension",
-    "name":         "synccit",
-    "version":      "1",
+    "icons":        {
+            "16"    : "icon16.png",
+            "48"    : "icon48.png",
+            "128"   : "icon128.png"
+        },
+    "description":  "synccit syncs reddit.com visited links and viewed comments syncing across browsers and devices",
+    "name":         "synccit for reddit",
+    "version":      "2",
 	"permissions":	[	"<all_urls>"
 						
 		]
