@@ -2,11 +2,11 @@
 // ==UserScript==
 // @name          synccit 
 // @namespace     http://synccit.com
-// @description   syncs your vistied pages and read comments with synccit.com
+// @description   syncs your visited pages and read comments with synccit.com
 // @copyright     2012, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.0
+// @version		  1.1
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
@@ -576,11 +576,14 @@ function addShowPage() {
 	var xpath = "/html/body/div[4]/div/div[1]/ul/li[6]/a";
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	var adlink = l.snapshotItem(0);
-	adlink.href="#";
-	adlink.onclick = function() {
-		showPage();
+	if(adlink != null) {
+		adlink.href="#";
+		adlink.onclick = function() {
+			showPage();
+		}
+		adlink.innerHTML = "synccit";
 	}
-	adlink.innerHTML = "synccit";
+	
 }
 
 function showPage() {
