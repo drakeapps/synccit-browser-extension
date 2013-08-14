@@ -6,7 +6,7 @@
 // @copyright     2012, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.1
+// @version		  1.2
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
@@ -91,8 +91,8 @@ else {
 	// just change the color of the link
 	// .synccit-comment is the same as .newComments from RES
 	// changed to remove GM_addStyle to make opera compatible but it doesn't support cross site xmlhttprequest so it doesn't matter
-	GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
-	//document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }"));
+	//GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
+	document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }"));
 
 	//clickedLink("15x1jp");
 
@@ -573,15 +573,25 @@ function clickedSelf(link, count) {
 function addShowPage() {
 	// /html/body/div[4]/div/div[1]/ul/li[6]/a
 	// this will replace the advertise link with synccit 
-	var xpath = "/html/body/div[4]/div/div[1]/ul/li[6]/a";
+	//var xpath = "/html/body/div[4]/div/div[1]/ul/li[6]/a";
+
+
+	// changed to add a link next to logout
+	var xpath = "//*[@id=\"header-bottom-right\"]";
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	var adlink = l.snapshotItem(0);
 	if(adlink != null) {
-		adlink.href="#";
-		adlink.onclick = function() {
+		// needs no white space
+		adlink.innerHTML += ' <span class="separator">|</span>\
+<ul class="flat-list hover">\
+<li><a href="#" id="synccit-prefs">synccit</a></li>\
+</ul>\
+		';
+
+		// add the javascript/greasemonkey call to our new synccit link
+		var synccitLink = document.getElementById('synccit-prefs').onclick = function() {
 			showPage();
 		}
-		adlink.innerHTML = "synccit";
 	}
 	
 }
