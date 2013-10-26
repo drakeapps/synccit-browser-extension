@@ -3,10 +3,10 @@
 // @name          synccit 
 // @namespace     http://synccit.com
 // @description   syncs your visited pages and read comments with synccit.com
-// @copyright     2012, Drake Apps, LLC (http://drakeapps.com/)
+// @copyright     2013, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.2
+// @version		  1.4
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
@@ -14,31 +14,16 @@
 // ==/UserScript==
 // 
 
-// fix for firefox
-// got nothing
-// firefox gives error of $ not defined
-// seems like there are only 2 things that really depend on jquery
-// i'll just try to get rid of them
-// wtf. just reddit.com is giving the error. not my script. reinstalling firefox fixed it. hcalk it up to weird firefox glitch
-// whatever. getting rid of the very small part of jquery i used is probably better
-//this.$ = this.jQuery = jQuery.noConflict(true);
-//this.$ = window.$;
-//this.$ = unsafeWindow.$;
 
-
-
-// chrome doesn't support this anymore. HTML5 way now
-//var username = GM_getValue("username");
-//var auth = GM_getValue("auth");
-//var api = GM_getValue("api");
 
 var username = localStorage['username'];
 var auth = localStorage['auth'];
 var api = localStorage['api'];
+var referral = localStorage['referral'];
 
 //console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.0";
+var devname = "synccit.user.js,v1.3";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
@@ -48,14 +33,7 @@ var devname = "synccit.user.js,v1.0";
 //}
 
 
-// this is quite possibly the most infuriating thing i've ever seen
-// log username. undefined
-// is username undefined? no
-// also, i can't get my form to show up without fucking everything up
 
-//console.log(username);
-//console.log(auth);
-//console.log(api);
 
 if(localStorage['synccit-link'] == "undefined" || localStorage['synccit-link'] == undefined ) {
 	localStorage['synccit-link'] = "";
@@ -73,17 +51,16 @@ if(username == undefined || username == "undefined") {
 		localStorage['api'] = "http://api.synccit.com/api.php";
 	}
 	showPage();
-	//console.log("username undefined");
 }
 
 else {
 
-	//console.log("username not undefined");
-	//console.log('we doin this shit');
 
 	var array = new Array();
 
 	addShowPage();
+
+	
 
 
 	// add read link color
@@ -150,11 +127,6 @@ else {
 
 	for(var i=0; i<l.snapshotLength; i++) {
 
-	//$('.thing').each(
-		//function(i, obj) {
-			// really just need to pull in data-fullname, but can't seem to get that to work
-			// tried .attr('data-fullname') with no luck, even though RES seems to do that
-			// can split and search the class
 		var elm = l.snapshotItem(i);
 		var string = elm.className;
 		//console.log(elm.className);
@@ -175,9 +147,6 @@ else {
 				}
 			}
 		}
-			//array[i] = id;
-			//console.log(array[i]);
-		//}   //);
 	}
 
 	//console.log(array.toString());
@@ -207,6 +176,9 @@ else {
 
 	  }
 	});
+
+
+	addReferrals();
 
 }
 
@@ -576,17 +548,21 @@ function addShowPage() {
 	//var xpath = "/html/body/div[4]/div/div[1]/ul/li[6]/a";
 
 
+	// link next to logout breaks RES
+	var xpath = "//*[@id=\"header-bottom-left\"]/ul";
+
 	// changed to add a link next to logout
-	var xpath = "//*[@id=\"header-bottom-right\"]";
+	// var xpath = "//*[@id=\"header-bottom-right\"]";
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	var adlink = l.snapshotItem(0);
 	if(adlink != null) {
 		// needs no white space
-		adlink.innerHTML += ' <span class="separator">|</span>\
+		/*adlink.innerHTML += ' <span class="separator">|</span>\
 <ul class="flat-list hover">\
 <li><a href="#" id="synccit-prefs">synccit</a></li>\
 </ul>\
-		';
+		';*/
+		adlink.innerHTML += '<li><a href="#" id="synccit-prefs">synccit</a></li>';
 
 		// add the javascript/greasemonkey call to our new synccit link
 		var synccitLink = document.getElementById('synccit-prefs').onclick = function() {
@@ -596,6 +572,43 @@ function addShowPage() {
 	
 }
 
+function addReferrals() {
+
+	// this loops through all links and adds/changes referral code to a synccit related one
+	// this should be completely transparent and not affect your browsing
+
+	var links = document.getElementsByTagName('a');
+	for(var i=0; i < links.length; i++) {
+
+		if(links[i].href != null && links[i].href != undefined) {
+			
+			var href = links[i].href;
+
+			var domain = href.split('/')[2];
+
+			if(domain != null && domain != undefined) {
+
+				//right now only amazon
+				if(domain.indexOf("amazon") != -1) {
+					href = href.split('?')[0] + "?tag=synccit0e-20";
+					links[i].href = href;
+
+					//tag=synccit0e-20
+				}
+
+			}
+			
+
+			
+
+		}
+		
+
+
+	}
+
+}
+
 function showPage() {
 	if(username == undefined)
 		username = '';
@@ -603,21 +616,28 @@ function showPage() {
 		auth = '';
 	if(api == undefined)
 		api = 'http://api.synccit.com/api.php';
-	// RES is not playing nice with this. it adds content to the page
-	// actually not RES. javascript/html/everyhting just doesn't play nice
+	if(referral == undefined)
+		referral = true;
+	var checkbox = "checked =\"checked\"";
+	if(referral == false || referral == "false") {
+		checkbox = "";
+	}
+	// register.php > create.php. thanks @edzuslv
 	document.getElementById('siteTable').innerHTML = '<div id="synccit-form"> \
 	<h3>username: </h3><br> \
 	<input type="text" id="username" value="'+username+'" ><br> \
 	<h3>auth code: </h3><br><input type="text" id="auth" value="'+auth+'" ><br><br> \
+	<br><input type="checkbox" id="referral" '+checkbox+'> support synccit with referral links? \
 	<a href="javascript: \
 	localStorage[\'username\'] = document.getElementById(\'username\').value; \
 	 localStorage[\'auth\'] = document.getElementById(\'auth\').value; \
 	localStorage[\'api\'] = document.getElementById(\'api\').value; \
+	localStorage[\'referral\'] = document.getElementById(\'referral\').checked; \
 	window.location.reload(); \
 	 " onclick="" id="save" ><h2>save</h2></a><br><br><br> \
 	<h3>api location (default http://api.synccit.com/api.php)</h3><br> \
 	<input type="text" id="api" value="'+api+'"><br><br> \
-	<h2><a href="http://synccit.com/register.php" target="_blank">signup</a></h2><br><br> \
+	<h2><a href="http://synccit.com/create.php" target="_blank">signup</a></h2><br><br> \
 	<em>to get rid of this, put something in username and auth or uninstall synccit extension/script</em> \
 	</div>';
 	return false;
