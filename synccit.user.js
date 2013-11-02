@@ -34,7 +34,6 @@ var devname = "synccit.user.js,v1.4";
 
 
 
-
 if(localStorage['synccit-link'] == "undefined" || localStorage['synccit-link'] == undefined ) {
 	localStorage['synccit-link'] = "";
 }
@@ -129,16 +128,12 @@ else {
 
 		var elm = l.snapshotItem(i);
 		var string = elm.className;
-		//console.log(elm.className);
 
 		//var string = $(obj).attr('class');
 		var sp = string.split(' ');
-		//console.log(string);
 		var id = '';
 		for(var j=0; j<sp.length; j++) {
-			//console.log(sp[i]);
 			if(sp[j].substr(0,3) == "id-") {
-				//console.log('found ' + sp[i]);
 				var simple = sp[j].split('_');
 				// length 6 to prevent trying to check all the comments
 				// need to do better searching
@@ -149,11 +144,9 @@ else {
 		}
 	}
 
-	//console.log(array.toString());
 
 	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=read" + "&links=" + array.toString();
 
-	//console.log(datastring);
 
 	// download visited links
 	// this is using the regular mode, not json
@@ -166,11 +159,6 @@ else {
 	    "Content-Type": "application/x-www-form-urlencoded"
 	  },
 	  onload: function(response) {
-	    /*if (response.responseText.indexOf("Logged in as") > -1) {
-	      location.href = "http://www.example.net/dashboard";
-	    }*/
-		
-		//console.log(response.responseText);
 
 		parseLinks(response.responseText);
 
@@ -232,11 +220,11 @@ function markLink(link) {
 	// xpath for the <a> with id
 	//$x('//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," id-t3_15u3d9 ")]/div[2]/p[1]/a');
 	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
-	//console.log(xpath);
+
 	////*[@id="siteTable"]/div[1]/div[2]/p[1]/a
 
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-	//console.log(l.snapshotItem(0).innerHTML);
+
 	var element = l.snapshotItem(0);
 	//element.className += '.synccit-read'; // adding the class doesn't seem to let it overwrite style even with !important
 										  // d'oh needed dot at front. replacing classname breaks RES 
@@ -254,12 +242,19 @@ function markComments(link, count) {
 	var element = l.snapshotItem(0);
 	if(element != null) {
 		var commentcount = element.innerHTML.split(' ')[0];
-		//console.log(element.innerHTML);
+
 		var newcomments = commentcount - count;
 		if(newcomments < 1) { // was just == 0, but occasionally will have less than 0 links. don't need an alert for -2 new comments
-			element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-nonew">(' + newcomments + ' new)</span>';
+			// createElement and createTextNode to not manipulate innerHTML
+			var span = document.createElement("span");
+			span.className = "synccit-nonew";
+			span.appendChild(document.createTextNode(' (' + newcomments + ' new)'));
+			element.appendChild(span);
 		} else {
-			element.innerHTML = element.innerHTML + '&nbsp;<span class="synccit-comment">(' + newcomments + ' new)</span>';
+			var span = document.createElement("span");
+			span.className = "synccit-comment";
+			span.appendChild(document.createTextNode(' (' + newcomments + ' new)'));
+			element.appendChild(span);
 		}
 		
 	}
@@ -271,13 +266,11 @@ function markComments(link, count) {
 function updateOnClicks() {
 	// this is familiar. maybe add the onclicks at the beginning to prevent looping through twice
 	
-
 	var xpath = '//*[@id="siteTable"]/div';
 	var m = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 	var k = 0;
 
-	//console.log(m.snapshotLength);
 
 	// getting rid of $(.thing).each is causing problems
 	// seems like marking nearly random links as read
@@ -293,54 +286,42 @@ function updateOnClicks() {
 }
 
 function updateFunction(elm) {
-	//var elm = m.snapshotItem(i);
+
 	var string = elm.className;
-	//console.log(string);
-	//var string = $(obj).attr('class');
+
 	var sp = string.split(' ');
-	//console.log(string);
-	//var id = '';
+
 	for(var j=0; j<sp.length; j++) {
 		//console.log(sp[i]);
 		if(sp[j].substr(0,3) == "id-") {
-			//console.log('found ' + sp[i]);
+
 			var simple = sp[j].split('_');
 			// length 6 to prevent trying to check all the comments
 			// need to do better searching
 			if(simple.length > 1 && simple[1].length == 6) {
-				//array[i] = simple[1];
+
 				var id = simple[1];
-				//console.log(id);
+
 				var classID = "id-t3_" + id;
-				//console.log(classID);
+
 				var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
-				//console.log(xpath);
+
 				var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 				var element = l.snapshotItem(0);
 				if(element != null) {
-					//return; // was $.each, so was function. now just loop. also == null return
-				//}
+
 					var href = element.href;
-					//console.log(href);
-					// I believe this is picking up the sidebar links?
-					//if(element != null) {
-						//console.log(element);
+
 					element.onclick = function () {
 						clickedLink(id);
 					};
 					
-					//} else {
-						//console.log("element null");
-					//}
-
-					//  //*[@id="siteTable"]/div[23]/div[2]/a
 
 					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/a';
 					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 					var expando = l.snapshotItem(0);
 					if(expando != null) {
 						expando.onclick = function() {
-							//console.log('found expando');
 							addLink(id);
 						}
 					}
@@ -350,12 +331,8 @@ function updateFunction(elm) {
 					var comm = l.snapshotItem(0);
 					if(comm != null) {
 						var commentcount = comm.innerHTML.split(' ')[0];
-						// self post
-						// console.log()
 						if(href == comm.href) {
-							//console.log("found self post");
 							comm.onclick = function () {
-								//clickedLink(id);
 								addSelf(id,commentcount);
 							}
 							element.onclick = function() {
@@ -385,7 +362,6 @@ function addLink(link) {
 		array[array.length] = link;
 		localStorage['synccit-link'] = array.toString();
 		clickedLink(link); // probably won't load since page is unloading. might work though
-		//localStorage[link] = "1,-1";
 	}
 	
 }
@@ -398,7 +374,6 @@ function addComment(link, count) {
 		array[array.length] = link+":"+count;
 		localStorage['synccit-comment'] = array.toString();
 		clickedComment(link, count);
-		//localStorage[link] = "0,"+count;
 	}
 	
 }
@@ -411,7 +386,6 @@ function addSelf(link, count) {
 		array[array.length] = link+":"+count;
 		localStorage['synccit-self'] = array.toString();
 		clickedSelf(link, count);
-		//localStorage[link] = "1,"+count;
 	}
 	
 }
@@ -428,9 +402,6 @@ function clickedLink(link) {
 	    "Content-Type": "application/x-www-form-urlencoded"
 	  },
 	  onload: function(response) {
-	    /*if (response.responseText.indexOf("Logged in as") > -1) {
-	      location.href = "http://www.example.net/dashboard";
-	    }*/
 		
 		console.log(response.responseText);
 		var array = localStorage['synccit-link'].split(',');
@@ -438,20 +409,13 @@ function clickedLink(link) {
 			localStorage['synccit-link'] = "";
 		} else {
 			for(var i=0; i<array.length; i++) {
-				//console.log(array[i]);
 				if(array[i] == link) {
-					//console.log('link presplice array: '+array.toString());
-					//console.log('link splice '+link);
 					array = array.splice(i, 1);
-					//console.log('link postsplice array: '+array.toString());
-					//break;
 				}
 			}
 			localStorage['synccit-link'] = array.toString();
 		}
 		return true;
-
-		//parseLinks(response.responseText);
 
 	  }
 	});
@@ -471,31 +435,22 @@ function clickedComment(link, count) {
 	    "Content-Type": "application/x-www-form-urlencoded"
 	  },
 	  onload: function(response) {
-	    /*if (response.responseText.indexOf("Logged in as") > -1) {
-	      location.href = "http://www.example.net/dashboard";
-	    }*/
 		
 		console.log(response.responseText);
 		var array = localStorage['synccit-comment'].split(',');
-		//console.log(array.toString());
+
 		if(array.length < 2) {
 			localStorage['synccit-comment'] = "";
 		} else {
 			for(var i=0; i<array.length; i++) {
 				var sp = array[i].split(':');
-				//console.log(sp[0]);
 				if(sp[0] == link) {
-					//console.log('comment presplice array: '+array.toString());
-					//console.log('comment splice '+link);
 					array = array.splice(i, 1);
-					//console.log('comment postsplice array: '+array.toString());
-					//break;
 				}
 			}
 			localStorage['synccit-comment'] = array.toString();
 		}
 		return true;
-		//parseLinks(response.responseText);
 
 	  }
 	});
@@ -513,9 +468,6 @@ function clickedSelf(link, count) {
 	    "Content-Type": "application/x-www-form-urlencoded"
 	  },
 	  onload: function(response) {
-	    /*if (response.responseText.indexOf("Logged in as") > -1) {
-	      location.href = "http://www.example.net/dashboard";
-	    }*/
 		
 		console.log(response.responseText);
 		var array = localStorage['synccit-self'].split(',');
@@ -524,19 +476,13 @@ function clickedSelf(link, count) {
 		} else {
 			for(var i=0; i<array.length; i++) {
 				var sp = array[i].split(':');
-				//console.log(sp[0]);
 				if(sp[0] == link) {
-					//console.log('self presplice array: '+array.toString());
-					//console.log('self splice '+link);
 					array = array.splice(i, 1);
-					//console.log('self postsplice array: '+array.toString());
-					//break;
 				}
 			}
 			localStorage['synccit-self'] = array.toString();
 		}
 		return true;
-		//parseLinks(response.responseText);
 
 	  }
 	});
@@ -556,13 +502,14 @@ function addShowPage() {
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	var adlink = l.snapshotItem(0);
 	if(adlink != null) {
-		// needs no white space
-		/*adlink.innerHTML += ' <span class="separator">|</span>\
-<ul class="flat-list hover">\
-<li><a href="#" id="synccit-prefs">synccit</a></li>\
-</ul>\
-		';*/
-		adlink.innerHTML += '<li><a href="#" id="synccit-prefs">synccit</a></li>';
+		// fixes RES view images
+		var li = document.createElement('li');
+		var settingsLink = document.createElement('a');
+		settingsLink.id = "synccit-prefs";
+		settingsLink.href = "#";
+		settingsLink.appendChild(document.createTextNode("synccit"));
+		li.appendChild(settingsLink);
+		adlink.appendChild(li);
 
 		// add the javascript/greasemonkey call to our new synccit link
 		var synccitLink = document.getElementById('synccit-prefs').onclick = function() {
@@ -618,6 +565,8 @@ function showPage() {
 	if(referral == false || referral == "false") {
 		checkbox = "";
 	}
+
+	// this needs to be converted over to just DOM manipulation, but how rarely it's called, it doesn't affect much
 	// register.php > create.php. thanks @edzuslv
 	document.getElementById('siteTable').innerHTML = '<div id="synccit-form"> \
 	<h3>username: </h3><br> \
@@ -637,6 +586,11 @@ function showPage() {
 	<em>to get rid of this, put something in username and auth or uninstall synccit extension/script</em> \
 	</div>';
 	return false;
+
+	/*var synccitSettings = document.createElement('div');
+	synccitSettings.id = "synccit-form";
+	synccitSettings.appendChild(document.createElement("h3").appendChild(document.createTextNode("username: ")));*/
+
 }
 
 function saveValues() {
