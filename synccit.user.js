@@ -616,7 +616,7 @@ function showPage() {
 	signupLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("signup")));
 
 	var refLink = document.createElement('a');
-	refLink.href = "http://synccit.com/api.php";
+	refLink.href = "http://synccit.com/faq.php";
 	refLink.target = "_blank";
 	refLink.appendChild(document.createElement("h2").appendChild(document.createTextNode(" support synccit with referrals?")));
 
