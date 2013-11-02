@@ -23,7 +23,7 @@ var referral = localStorage['referral'];
 
 //console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.3";
+var devname = "synccit.user.js,v1.4";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
@@ -576,35 +576,31 @@ function addReferrals() {
 
 	// this loops through all links and adds/changes referral code to a synccit related one
 	// this should be completely transparent and not affect your browsing
+	if(!(referral == false || referral == "false")) {
+		var links = document.getElementsByTagName('a');
+		for(var i=0; i < links.length; i++) {
 
-	var links = document.getElementsByTagName('a');
-	for(var i=0; i < links.length; i++) {
+			if(links[i].href != null && links[i].href != undefined) {
+				
+				var href = links[i].href;
 
-		if(links[i].href != null && links[i].href != undefined) {
-			
-			var href = links[i].href;
+				var domain = href.split('/')[2];
 
-			var domain = href.split('/')[2];
+				if(domain != null && domain != undefined) {
 
-			if(domain != null && domain != undefined) {
+					//right now only amazon
+					if(domain.indexOf("amazon") != -1) {
+						href = href.split('?')[0] + "?tag=synccit0e-20";
+						links[i].href = href;
 
-				//right now only amazon
-				if(domain.indexOf("amazon") != -1) {
-					href = href.split('?')[0] + "?tag=synccit0e-20";
-					links[i].href = href;
+						//tag=synccit0e-20
+					}
 
-					//tag=synccit0e-20
 				}
 
 			}
-			
-
-			
 
 		}
-		
-
-
 	}
 
 }
