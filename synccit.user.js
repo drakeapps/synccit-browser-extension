@@ -6,7 +6,7 @@
 // @copyright     2013, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.4
+// @version		  1.5
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
@@ -23,7 +23,7 @@ var referral = localStorage['referral'];
 
 //console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.4";
+var devname = "synccit.user.js,v1.5";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
@@ -159,7 +159,6 @@ else {
 	    "Content-Type": "application/x-www-form-urlencoded"
 	  },
 	  onload: function(response) {
-
 		parseLinks(response.responseText);
 
 	  }
@@ -201,6 +200,7 @@ function parseLinks(links) {
 				console.log("found read comments for link " + linkid + " with " + commentcount + " read comments");
 				markComments(linkid, commentcount);
 			}
+			
 
 		}
 	}
@@ -566,38 +566,131 @@ function showPage() {
 		checkbox = "";
 	}
 
-	// this needs to be converted over to just DOM manipulation, but how rarely it's called, it doesn't affect much
 	// register.php > create.php. thanks @edzuslv
-	document.getElementById('siteTable').innerHTML = '<div id="synccit-form"> \
-	<h3>username: </h3><br> \
-	<input type="text" id="username" value="'+username+'" ><br> \
-	<h3>auth code: </h3><br><input type="text" id="auth" value="'+auth+'" ><br><br> \
-	<br><input type="checkbox" id="referral" '+checkbox+'> support synccit with referral links? \
-	<a href="javascript: \
-	localStorage[\'username\'] = document.getElementById(\'username\').value; \
-	 localStorage[\'auth\'] = document.getElementById(\'auth\').value; \
-	localStorage[\'api\'] = document.getElementById(\'api\').value; \
-	localStorage[\'referral\'] = document.getElementById(\'referral\').checked; \
-	window.location.reload(); \
-	 " onclick="" id="save" ><h2>save</h2></a><br><br><br> \
-	<h3>api location (default http://api.synccit.com/api.php)</h3><br> \
-	<input type="text" id="api" value="'+api+'"><br><br> \
-	<h2><a href="http://synccit.com/create.php" target="_blank">signup</a></h2><br><br> \
-	<em>to get rid of this, put something in username and auth or uninstall synccit extension/script</em> \
-	</div>';
-	return false;
 
-	/*var synccitSettings = document.createElement('div');
+	// I'm sure there's a better way to do this
+
+	var synccitSettings = document.createElement('div');
 	synccitSettings.id = "synccit-form";
-	synccitSettings.appendChild(document.createElement("h3").appendChild(document.createTextNode("username: ")));*/
+	//synccitSettings.appendChild();
+
+
+	var usernameInput = document.createElement('input');
+	usernameInput.id = "username";
+	usernameInput.type = "text";
+	usernameInput.value = username;
+
+	var authInput = document.createElement('input');
+	authInput.id = "auth";
+	authInput.type = "text";
+	authInput.value = auth;
+
+	var refInput = document.createElement('input');
+	refInput.id = "referral";
+	refInput.type = "checkbox";
+	if(referral == false || referral == "false") {
+		refInput.checked = "";
+	} else {
+		refInput.checked = "checked";
+	}
+
+	var apiInput = document.createElement('input');
+	apiInput.id = "api";
+	apiInput.type = "text";
+	apiInput.value = api;
+
+
+	var saveLink = document.createElement('a');
+	saveLink.href = "#";
+	saveLink.id = "synccit-save";
+	saveLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("save")));
+
+	var closeLink = document.createElement('a');
+	closeLink.href = "#";
+	closeLink.id = "synccit-close";
+	closeLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("close")));
+
+	var signupLink = document.createElement('a');
+	signupLink.href = "http://synccit.com/create.php";
+	signupLink.target = "_blank";
+	signupLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("signup")));
+
+	var refLink = document.createElement('a');
+	refLink.href = "http://synccit.com/api.php";
+	refLink.target = "_blank";
+	refLink.appendChild(document.createElement("h2").appendChild(document.createTextNode(" support synccit with referrals?")));
+
+	var apiLoc = document.createElement("h3").appendChild(document.createTextNode("api location (default http://api.synccit.com/api.php)"));
+
+	var usernameTitle = document.createElement("h3").appendChild(document.createTextNode("username: "));
+	var authTitle = document.createElement("h3").appendChild(document.createTextNode("auth: "));
+
+
+
+	synccitSettings.appendChild(usernameTitle);
+	synccitSettings.appendChild(usernameInput);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(authTitle);
+	synccitSettings.appendChild(authInput);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(refInput);
+	synccitSettings.appendChild(refLink);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(saveLink);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(apiLoc);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(apiInput);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(signupLink);
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(document.createElement("br"));
+	synccitSettings.appendChild(closeLink);
+
+	document.getElementById('siteTable').innerHTML ='';
+
+	document.getElementById('siteTable').appendChild(synccitSettings);
+
+
+	var saveLinkEvent = document.getElementById("synccit-save").onclick = function() {
+		saveValues();
+	}
+
+	var saveLinkEvent = document.getElementById("synccit-close").onclick = function() {
+		closePage();
+	}
+
+	return false;
+	
 
 }
 
 function saveValues() {
 	console.log("saving...");
-	localStorage['username'] = document.getElementById('username').text;
-	localStorage['auth'] = document.getElementById('auth').text;
-	localStorage['api'] = document.getElementById('api').text;
+	localStorage['username'] = document.getElementById('username').value;
+	localStorage['auth'] = document.getElementById('auth').value;
+	localStorage['api'] = document.getElementById('api').value;
+	localStorage['referral'] = document.getElementById('referral').checked;
+	window.location.reload();
+}
+
+function closePage() {
+	console.log("closing...");
+	if(document.getElementById('username').value == '') {
+		localStorage['username'] = "null";
+	} else {
+		localStorage['username'] = document.getElementById('username').value;
+	}
+	if(document.getElementById('auth').value == '') {
+		localStorage['auth'] = "null";
+	} else {
+		localStorage['auth'] = document.getElementById('auth').value;
+	}
+	localStorage['api'] = document.getElementById('api').value;
+	localStorage['referral'] = document.getElementById('referral').checked;
+	window.location.reload();
 }
 
 
