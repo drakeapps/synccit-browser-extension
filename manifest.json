@@ -8,7 +8,9 @@
  								
 							],
         "matches":          [   "http://*.reddit.com/*",
-								"http://reddit.com/*"
+								"http://reddit.com/*",
+                                "https://*.reddit.com/*",
+                                "https://reddit.com/*"
                             ],
         "run_at": "document_end"
     } ],
@@ -20,7 +22,7 @@
         },
     "description":  "synccit syncs reddit.com visited links and viewed comments syncing across browsers and devices",
     "name":         "synccit for reddit",
-    "version":      "5",
+    "version":      "7",
     "short_name":   "synccit",
 	"permissions":	[	"<all_urls>"
 						

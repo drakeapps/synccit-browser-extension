@@ -1,14 +1,16 @@
 // 
 // ==UserScript==
 // @name          synccit 
-// @namespace     http://synccit.com
+// @namespace     https://synccit.com
 // @description   syncs your visited pages and read comments with synccit.com
-// @copyright     2013, Drake Apps, LLC (http://drakeapps.com/)
+// @copyright     2015, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.5
+// @version		  1.7
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
+// @include       https://*.reddit.com/*
+// @include       https://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
 // @updateURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
 // ==/UserScript==
@@ -23,7 +25,7 @@ var referral = localStorage['referral'];
 
 //console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.5";
+var devname = "synccit.user.js,v1.6";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
@@ -44,11 +46,16 @@ if(localStorage['synccit-self'] == "undefined" || localStorage['synccit-self'] =
 	localStorage['synccit-self'] = "";
 }//
 
+if(localStorage['api'] == "http://api.synccit.com/api.php") {
+    localStorage['api'] = "https://api.synccit.com/api.php";
+}
+
 if(username == undefined || username == "undefined") {
 	if(localStorage['api'] == undefined) {
 		console.log('api undefined');
-		localStorage['api'] = "http://api.synccit.com/api.php";
+		localStorage['api'] = "https://api.synccit.com/api.php";
 	}
+	
 	showPage();
 }
 
@@ -219,6 +226,7 @@ function markLink(link) {
 	// jquery is being a pain. going with xpath
 	// xpath for the <a> with id
 	//$x('//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," id-t3_15u3d9 ")]/div[2]/p[1]/a');
+    ////*[@id="siteTable"]/div[1]/div[2]/p[1]/a
 	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
 
 	////*[@id="siteTable"]/div[1]/div[2]/p[1]/a
@@ -231,6 +239,8 @@ function markLink(link) {
 	if(element != null) { // seems on self post this will end up null or something. not sure why
 		element.style.color = "#551a8b";	  // nevermind still didn't work. just changing the style does though	
 	}
+    
+    console.log("marked link");
 						
 
 }
@@ -391,7 +401,6 @@ function addSelf(link, count) {
 }
 
 function clickedLink(link) {
-	
 	var datastring = "username=" + username + "&auth=" + auth + "&dev=" + devname + "&mode=update" + "&links=" + link;
 	//console.log(datastring);
 	GM_xmlhttpRequest({
@@ -558,7 +567,7 @@ function showPage() {
 	if(auth == undefined)
 		auth = '';
 	if(api == undefined)
-		api = 'http://api.synccit.com/api.php';
+		api = 'https://api.synccit.com/api.php';
 	if(referral == undefined)
 		referral = true;
 	var checkbox = "checked =\"checked\"";
@@ -611,16 +620,16 @@ function showPage() {
 	closeLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("close")));
 
 	var signupLink = document.createElement('a');
-	signupLink.href = "http://synccit.com/create.php";
+	signupLink.href = "https://synccit.com/create.php";
 	signupLink.target = "_blank";
 	signupLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("signup")));
 
 	var refLink = document.createElement('a');
-	refLink.href = "http://synccit.com/faq.php";
+	refLink.href = "https://synccit.com/faq.php";
 	refLink.target = "_blank";
 	refLink.appendChild(document.createElement("h2").appendChild(document.createTextNode(" support synccit with referrals?")));
 
-	var apiLoc = document.createElement("h3").appendChild(document.createTextNode("api location (default http://api.synccit.com/api.php)"));
+	var apiLoc = document.createElement("h3").appendChild(document.createTextNode("api location (default https://api.synccit.com/api.php)"));
 
 	var usernameTitle = document.createElement("h3").appendChild(document.createTextNode("username: "));
 	var authTitle = document.createElement("h3").appendChild(document.createTextNode("auth: "));
