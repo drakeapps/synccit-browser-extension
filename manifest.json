@@ -22,9 +22,11 @@
         },
     "description":  "synccit syncs reddit.com visited links and viewed comments syncing across browsers and devices",
     "name":         "synccit for reddit",
-    "version":      "7",
+    "version":      "8",
     "short_name":   "synccit",
-	"permissions":	[	"<all_urls>"
+	"permissions":	[	
+        "<all_urls>",
+        "storage"
 						
 		]
 }

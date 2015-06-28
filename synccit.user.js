@@ -6,7 +6,7 @@
 // @copyright     2015, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.7
+// @version		  1.8
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -17,13 +17,33 @@
 // 
 
 
+var username;// = localStorage['username'];
+var auth;// = localStorage['auth'];
+var api;// = localStorage['api'];
+var referral;// = localStorage['referral'];
 
-var username = localStorage['username'];
-var auth = localStorage['auth'];
-var api = localStorage['api'];
-var referral = localStorage['referral'];
+// So I'm slight confused on storage.sync
+// I'm wondering if this is connecting to google servers each request
+// If that's the case, there's a lag depending on how long it takes for this to call
+// So could use storage.local and just use storage.sync when storage.local isn't set
+// Or after a set amount time too incase something changes
+chrome.storage.sync.get(["username", "auth", "api", "referral"], function(items) {
+    console.log(items);
+    username = items["username"];
+    auth = items["auth"];
+    api = items["api"];
+    referral = items["referral"];
 
-//console.log(username + ' '+ auth + ' ' + api);
+
+//var username = localStorage['username'];
+//var auth = localStorage['auth'];
+//var api = localStorage['api'];
+//var referral = localStorage['referral'];
+
+
+
+
+console.log(username + ' '+ auth + ' ' + api);
 
 var devname = "synccit.user.js,v1.6";
 
@@ -46,22 +66,41 @@ if(localStorage['synccit-self'] == "undefined" || localStorage['synccit-self'] =
 	localStorage['synccit-self'] = "";
 }//
 
-if(localStorage['api'] == "http://api.synccit.com/api.php") {
-    localStorage['api'] = "https://api.synccit.com/api.php";
+if(api == "http://api.synccit.com/api.php") {
+    api = "https://api.synccit.com/api.php";
 }
 
 if(username == undefined || username == "undefined") {
-	if(localStorage['api'] == undefined) {
-		console.log('api undefined');
-		localStorage['api'] = "https://api.synccit.com/api.php";
-	}
-	
-	showPage();
-}
+	if(localStorage["username"] == undefined || localStorage["username"] == "undefined") {
 
+    }
+    else {
+        username = localStorage["username"];
+        auth = localStorage["auth"];
+        api = localStorage["api"];
+        referral = localStorage["referral"];
+    }
+}
+    
+    
+if(username == undefined || username == "undefined") {
+	if(localStorage["username"] == undefined || localStorage["username"] == "undefined") {
+        if(api == undefined) {
+		console.log('api undefined');
+		api = "https://api.synccit.com/api.php";
+	   }
+        
+        showPage();
+    }
+}
+    
 else {
 
+    chrome.storage.sync.set({"username":username, "auth":auth, "api":api, "referral":referral});
+    chrome.storage.local.set({"username":username, "auth":auth, "api":api, "referral":referral});
 
+
+    
 	var array = new Array();
 
 	addShowPage();
@@ -678,29 +717,48 @@ function showPage() {
 
 function saveValues() {
 	console.log("saving...");
-	localStorage['username'] = document.getElementById('username').value;
-	localStorage['auth'] = document.getElementById('auth').value;
-	localStorage['api'] = document.getElementById('api').value;
-	localStorage['referral'] = document.getElementById('referral').checked;
+	//localStorage['username'] = document.getElementById('username').value;
+	//localStorage['auth'] = document.getElementById('auth').value;
+	//localStorage['api'] = document.getElementById('api').value;
+	//localStorage['referral'] = document.getElementById('referral').checked;
+    chrome.storage.sync.set({
+        "username":document.getElementById('username').value, 
+        "auth":document.getElementById('auth').value, 
+        "api":document.getElementById('api').value, 
+        "referral":document.getElementById('referral').checked
+    });
+    chrome.storage.local.set({
+        "username":document.getElementById('username').value, 
+        "auth":document.getElementById('auth').value, 
+        "api":document.getElementById('api').value, 
+        "referral":document.getElementById('referral').checked
+    });
 	window.location.reload();
 }
 
 function closePage() {
 	console.log("closing...");
+    var username;
+    var auth;
 	if(document.getElementById('username').value == '') {
-		localStorage['username'] = "null";
+		username = "null";
 	} else {
-		localStorage['username'] = document.getElementById('username').value;
+		username = document.getElementById('username').value;
 	}
 	if(document.getElementById('auth').value == '') {
-		localStorage['auth'] = "null";
+		auth = "null";
 	} else {
-		localStorage['auth'] = document.getElementById('auth').value;
+		auth = document.getElementById('auth').value;
 	}
-	localStorage['api'] = document.getElementById('api').value;
-	localStorage['referral'] = document.getElementById('referral').checked;
+	var api = document.getElementById('api').value;
+	var referral = document.getElementById('referral').checked;
+    
+    chrome.storage.sync.set({"username":username, "auth":auth, "api":api, "referral":referral});
+    chrome.storage.local.set({"username":username, "auth":auth, "api":api, "referral":referral});
+    
 	window.location.reload();
 }
 
 
 
+});
