@@ -75,7 +75,15 @@ else {
 	// .synccit-comment is the same as .newComments from RES
 	// changed to remove GM_addStyle to make opera compatible but it doesn't support cross site xmlhttprequest so it doesn't matter
 	//GM_addStyle(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }");
-	document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }"));
+	// checks for res-nightmode
+    // res has to have loaded and changed page already for this to work
+    // I actually don't think this part is used anymore
+    if(document.body.className.indexOf('res-nightmode') >= 0) {
+        console.log(document.body.className.indexOf('res-nightmode'));
+        document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(".synccit-read { color: gray !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }"));
+    } else {
+        document.documentElement.appendChild(document.createElement('style')).appendChild(document.createTextNode(".synccit-read { color: #551a8b !important;  } .synccit-comment { display: inline; color: orangered;} .synccit-nonew { display: inline; }"));
+    }
 
 	//clickedLink("15x1jp");
 
@@ -237,7 +245,11 @@ function markLink(link) {
 	//element.className += '.synccit-read'; // adding the class doesn't seem to let it overwrite style even with !important
 										  // d'oh needed dot at front. replacing classname breaks RES 
 	if(element != null) { // seems on self post this will end up null or something. not sure why
-		element.style.color = "#551a8b";	  // nevermind still didn't work. just changing the style does though	
+		if(document.body.className.indexOf('res-nightmode') >= 0) {
+            element.style.color = "gray";	  // nevermind still didn't work. just changing the style does though	
+        } else {
+            element.style.color = "#551a8b";
+        }
 	}
     
     console.log("marked link");
