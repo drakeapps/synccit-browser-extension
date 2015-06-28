@@ -6,7 +6,7 @@
 // @copyright     2015, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.8
+// @version		  1.9
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -45,7 +45,7 @@ chrome.storage.sync.get(["username", "auth", "api", "referral"], function(items)
 
 console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.6";
+var devname = "synccit-chrome,v1.9";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
