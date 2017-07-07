@@ -235,7 +235,7 @@ function markLink(link) {
 	// xpath for the <a> with id
 	//$x('//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," id-t3_15u3d9 ")]/div[2]/p[1]/a');
     ////*[@id="siteTable"]/div[1]/div[2]/p[1]/a
-	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
+	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/p[1]/a';
 
 	////*[@id="siteTable"]/div[1]/div[2]/p[1]/a
 
@@ -259,7 +259,7 @@ function markLink(link) {
 
 function markComments(link, count) {
 	var classID = "id-t3_" + link; 
-	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/ul/li[1]/a';
+	var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/ul/li[1]/a';
 	var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	var element = l.snapshotItem(0);
 	if(element != null) {
@@ -326,7 +326,7 @@ function updateFunction(elm) {
 
 				var classID = "id-t3_" + id;
 
-				var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/p[1]/a';
+				var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/p[1]/a';
 
 				var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 				var element = l.snapshotItem(0);
@@ -339,7 +339,7 @@ function updateFunction(elm) {
 					};
 					
 
-					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/a';
+					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/div[1]';
 					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 					var expando = l.snapshotItem(0);
 					if(expando != null) {
@@ -348,7 +348,7 @@ function updateFunction(elm) {
 						}
 					}
 					
-					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/ul/li[1]/a';
+					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/ul/li[1]/a';
 					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 					var comm = l.snapshotItem(0);
 					if(comm != null) {
