@@ -3,10 +3,10 @@
 // @name          synccit 
 // @namespace     https://synccit.com
 // @description   syncs your visited pages and read comments with synccit.com
-// @copyright     2015, Drake Apps, LLC (http://drakeapps.com/)
+// @copyright     2017, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.7
+// @version		  1.10
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -25,7 +25,7 @@ var referral = localStorage['referral'];
 
 //console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.6";
+var devname = "synccit.user.js,v1.10";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
