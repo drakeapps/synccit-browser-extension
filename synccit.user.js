@@ -3,10 +3,10 @@
 // @name          synccit 
 // @namespace     https://synccit.com
 // @description   syncs your visited pages and read comments with synccit.com
-// @copyright     2015, Drake Apps, LLC (http://drakeapps.com/)
+// @copyright     2017, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.9
+// @version		  1.10
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -20,32 +20,23 @@
 var username;// = localStorage['username'];
 var auth;// = localStorage['auth'];
 var api;// = localStorage['api'];
-var referral;// = localStorage['referral'];
 
 // So I'm slight confused on storage.sync
 // I'm wondering if this is connecting to google servers each request
 // If that's the case, there's a lag depending on how long it takes for this to call
 // So could use storage.local and just use storage.sync when storage.local isn't set
 // Or after a set amount time too incase something changes
-chrome.storage.sync.get(["username", "auth", "api", "referral"], function(items) {
+chrome.storage.sync.get(["username", "auth", "api"], function(items) {
     console.log(items);
     username = items["username"];
     auth = items["auth"];
     api = items["api"];
-    referral = items["referral"];
-
-
-//var username = localStorage['username'];
-//var auth = localStorage['auth'];
-//var api = localStorage['api'];
-//var referral = localStorage['referral'];
-
-
 
 
 console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit-chrome,v1.9";
+var devname = "synccit-chrome,v1.10";
+
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
@@ -78,7 +69,6 @@ if(username == undefined || username == "undefined") {
         username = localStorage["username"];
         auth = localStorage["auth"];
         api = localStorage["api"];
-        referral = localStorage["referral"];
     }
 }
     
@@ -96,8 +86,8 @@ if(username == undefined || username == "undefined") {
     
 else {
 
-    chrome.storage.sync.set({"username":username, "auth":auth, "api":api, "referral":referral});
-    chrome.storage.local.set({"username":username, "auth":auth, "api":api, "referral":referral});
+    chrome.storage.sync.set({"username":username, "auth":auth, "api":api});
+    chrome.storage.local.set({"username":username, "auth":auth, "api":api});
 
 
     
@@ -217,9 +207,6 @@ else {
 
 	  }
 	});
-
-
-	addReferrals();
 
 }
 
@@ -579,39 +566,6 @@ function addShowPage() {
 	
 }
 
-function addReferrals() {
-
-	// this loops through all links and adds/changes referral code to a synccit related one
-	// this should be completely transparent and not affect your browsing
-	if(!(referral == false || referral == "false")) {
-		var links = document.getElementsByTagName('a');
-		for(var i=0; i < links.length; i++) {
-
-			if(links[i].href != null && links[i].href != undefined) {
-				
-				var href = links[i].href;
-
-				var domain = href.split('/')[2];
-
-				if(domain != null && domain != undefined) {
-
-					//right now only amazon
-					if(domain.indexOf("amazon") != -1) {
-						href = href.split('?')[0] + "?tag=synccit0e-20";
-						links[i].href = href;
-
-						//tag=synccit0e-20
-					}
-
-				}
-
-			}
-
-		}
-	}
-
-}
-
 function showPage() {
 	if(username == undefined)
 		username = '';
@@ -619,95 +573,83 @@ function showPage() {
 		auth = '';
 	if(api == undefined)
 		api = 'https://api.synccit.com/api.php';
-	if(referral == undefined)
-		referral = true;
-	var checkbox = "checked =\"checked\"";
-	if(referral == false || referral == "false") {
-		checkbox = "";
-	}
+
+
+	var html = `
+	<style type="text/css">
+		#synccit-form {
+			width: 100%;
+		}
+		.synccit-input {
+			font-size: 175%; 
+			max-width: 100%;
+			width: 400px;
+		}
+		.synccit-input-paragraph {
+			padding-bottom: 10px;
+		}
+		.synccit-400 {
+			max-width: 400px;
+		}
+	</style>
+	<div id="synccit-form">
+		<p><h1>synccit settings</h1></p>
+		<br>
+		<p>
+			<h1>Like synccit? Please <a href="https://synccit.com/donate.php" target="_blank">donate</a> if you can</h1>
+		</p>
+		<br><br>
+		<p>
+			<h2>username</h2>
+		</p>
+		<p class="synccit-input-paragraph">
+			<input id="username" type="text" class="synccit-input" placeholder="username" value="%username%">
+		</p>
+
+		<p>
+			<h2>auth code <a href="https://synccit.com/faq.php">(what is this?)</a></h2>
+		</p>
+		<p class="synccit-input-paragraph">
+			<input id="auth" type="text" class="synccit-input" placeholder="auth code" value="%auth%">
+		</p>
+
+		<p>
+			<h2>api url</a></h2>
+		</p>
+		<p class="synccit-input-paragraph">
+			<input id="api" type="text" class="synccit-input" placeholder="https://api.synccit.com/api.php" value="%api%">
+		</p>
+
+		<div class="morelink synccit-400">
+			<a href="#" id="synccit-save">save</a>
+		</div>
+
+		<p><h1>Need an account?</h1></p>
+
+		<div class="morelink synccit-400">
+			<a href="https://synccit.com/create.php" target="_blank">create synccit account</a>
+		</div>
+
+		<br><br><br>
+		<div class="morelink synccit-400">
+			<a href="#" id="synccit-close">close/discard changes</a>
+		</div>
+	</div>
+
+
+
+	`;
+
+	html = html.replace('%username%', username);
+	html = html.replace('%auth%', auth);
+	html = html.replace('%api%', api);
 
 	// register.php > create.php. thanks @edzuslv
 
-	// I'm sure there's a better way to do this
 
 	var synccitSettings = document.createElement('div');
 	synccitSettings.id = "synccit-form";
-	//synccitSettings.appendChild();
-
-
-	var usernameInput = document.createElement('input');
-	usernameInput.id = "username";
-	usernameInput.type = "text";
-	usernameInput.value = username;
-
-	var authInput = document.createElement('input');
-	authInput.id = "auth";
-	authInput.type = "text";
-	authInput.value = auth;
-
-	var refInput = document.createElement('input');
-	refInput.id = "referral";
-	refInput.type = "checkbox";
-	if(referral == false || referral == "false") {
-		refInput.checked = "";
-	} else {
-		refInput.checked = "checked";
-	}
-
-	var apiInput = document.createElement('input');
-	apiInput.id = "api";
-	apiInput.type = "text";
-	apiInput.value = api;
-
-
-	var saveLink = document.createElement('a');
-	saveLink.href = "#";
-	saveLink.id = "synccit-save";
-	saveLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("save")));
-
-	var closeLink = document.createElement('a');
-	closeLink.href = "#";
-	closeLink.id = "synccit-close";
-	closeLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("close")));
-
-	var signupLink = document.createElement('a');
-	signupLink.href = "https://synccit.com/create.php";
-	signupLink.target = "_blank";
-	signupLink.appendChild(document.createElement("h2").appendChild(document.createTextNode("signup")));
-
-	var refLink = document.createElement('a');
-	refLink.href = "https://synccit.com/faq.php";
-	refLink.target = "_blank";
-	refLink.appendChild(document.createElement("h2").appendChild(document.createTextNode(" support synccit with referrals?")));
-
-	var apiLoc = document.createElement("h3").appendChild(document.createTextNode("api location (default https://api.synccit.com/api.php)"));
-
-	var usernameTitle = document.createElement("h3").appendChild(document.createTextNode("username: "));
-	var authTitle = document.createElement("h3").appendChild(document.createTextNode("auth: "));
-
-
-
-	synccitSettings.appendChild(usernameTitle);
-	synccitSettings.appendChild(usernameInput);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(authTitle);
-	synccitSettings.appendChild(authInput);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(refInput);
-	synccitSettings.appendChild(refLink);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(saveLink);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(apiLoc);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(apiInput);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(signupLink);
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(document.createElement("br"));
-	synccitSettings.appendChild(closeLink);
+	synccitSettings.innerHTML = html;
 
 	document.getElementById('siteTable').innerHTML ='';
 
@@ -729,45 +671,21 @@ function showPage() {
 
 function saveValues() {
 	console.log("saving...");
-	//localStorage['username'] = document.getElementById('username').value;
-	//localStorage['auth'] = document.getElementById('auth').value;
-	//localStorage['api'] = document.getElementById('api').value;
-	//localStorage['referral'] = document.getElementById('referral').checked;
     chrome.storage.sync.set({
         "username":document.getElementById('username').value, 
         "auth":document.getElementById('auth').value, 
         "api":document.getElementById('api').value, 
-        "referral":document.getElementById('referral').checked
     });
     chrome.storage.local.set({
         "username":document.getElementById('username').value, 
         "auth":document.getElementById('auth').value, 
         "api":document.getElementById('api').value, 
-        "referral":document.getElementById('referral').checked
     });
 	window.location.reload();
 }
 
 function closePage() {
 	console.log("closing...");
-    var username;
-    var auth;
-	if(document.getElementById('username').value == '') {
-		username = "null";
-	} else {
-		username = document.getElementById('username').value;
-	}
-	if(document.getElementById('auth').value == '') {
-		auth = "null";
-	} else {
-		auth = document.getElementById('auth').value;
-	}
-	var api = document.getElementById('api').value;
-	var referral = document.getElementById('referral').checked;
-    
-    chrome.storage.sync.set({"username":username, "auth":auth, "api":api, "referral":referral});
-    chrome.storage.local.set({"username":username, "auth":auth, "api":api, "referral":referral});
-    
 	window.location.reload();
 }
 
