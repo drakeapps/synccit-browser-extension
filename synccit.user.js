@@ -335,7 +335,7 @@ function updateFunction(elm) {
 					};
 					
 
-					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/div[1]';
+					var xpath = '//*[@id="siteTable"]/div[contains(concat(" ",normalize-space(@class)," ")," '+classID+' ")]/div[2]/div[1]/*[contains(concat(" ",normalize-space(@class)," ")," expando-button ")]';
 					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 					var expando = l.snapshotItem(0);
 					if(expando != null) {
