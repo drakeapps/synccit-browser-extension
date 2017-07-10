@@ -16,6 +16,14 @@ Greasemonkey userscript for use with Chrome, Firefox, etc.
 * The number of comments that are counted as read are based what it says on the page when you click the link.
 * If you're using RES, turning off new comment count is probably a good idea, otherwise you'll end up with 2 unread counts.
 
+## Chrome Extension
+
+Switch to branch `chrome-extension` for Chrome extension specific code
+
+## Firefox Extension
+
+Switch to branch `firefox-extension` for Firefox extension specific code
+
 
 To use/make Chrome extension:
 
