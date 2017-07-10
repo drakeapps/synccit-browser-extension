@@ -6,7 +6,7 @@
 // @copyright     2017, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.10
+// @version		  1.11
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -24,7 +24,7 @@ var api = localStorage['api'];
 
 //console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit.user.js,v1.10";
+var devname = "synccit.user.js,v1.11";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
