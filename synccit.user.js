@@ -13,6 +13,7 @@
 // @include       https://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
 // @updateURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
+// @grant         GM_xmlhttpRequest
 // ==/UserScript==
 // 
 
