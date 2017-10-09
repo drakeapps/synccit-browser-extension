@@ -6,13 +6,14 @@
 // @copyright     2017, Drake Apps, LLC (http://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.11
+// @version		  1.12
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
 // @include       https://reddit.com/*
 // @downloadURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
 // @updateURL	  https://github.com/drakeapps/synccit-browser-extension/raw/master/synccit.user.js
+// @grant         GM_xmlhttpRequest
 // ==/UserScript==
 // 
 
@@ -35,7 +36,7 @@ chrome.storage.sync.get(["username", "auth", "api"], function(items) {
 
 console.log(username + ' '+ auth + ' ' + api);
 
-var devname = "synccit-chrome,v1.11";
+var devname = "synccit-chrome,v1.12";
 
 // add addStyle if doesn't exist
 // if doesn't have xmlHttpRequest, that's a whole other issue
@@ -231,16 +232,16 @@ function parseLinks(links) {
 			var linktime = secondsplit[0];
 			var commentcount = secondsplit[1];
 
-			if(linktime > 1) {
-				console.log("found read link " + linkid + "");
-				markLink(linkid);
-			}
 
 			if(commentcount > 0) {
 				console.log("found read comments for link " + linkid + " with " + commentcount + " read comments");
 				markComments(linkid, commentcount);
+				markLink(linkid);
+			} else if(linktime > 1) {
+				console.log("found read link " + linkid + "");
+				markLink(linkid);
 			}
-			
+
 
 		}
 	}
@@ -270,11 +271,7 @@ function markLink(link) {
 	//element.className += '.synccit-read'; // adding the class doesn't seem to let it overwrite style even with !important
 										  // d'oh needed dot at front. replacing classname breaks RES 
 	if(element != null) { // seems on self post this will end up null or something. not sure why
-		if(document.body.className.indexOf('res-nightmode') >= 0) {
-            element.style.color = "gray";	  // nevermind still didn't work. just changing the style does though	
-        } else {
-            element.style.color = "#551a8b";
-        }
+		element.style.opacity = .4;
 	}
     
     console.log("marked link");
@@ -305,7 +302,7 @@ function markComments(link, count) {
 		}
 		
 	}
-	
+
 
 }
 
@@ -359,8 +356,12 @@ function updateFunction(elm) {
 
 					var href = element.href;
 
-					element.onclick = function () {
-						clickedLink(id);
+					element.onmousedown = function (e) {
+						if (e.button === 0) {
+							clickedLink(id);
+						} else if (e.button === 1) {
+							addLink(id);
+						}
 					};
 					
 
@@ -368,8 +369,10 @@ function updateFunction(elm) {
 					var l = document.evaluate(xpath, document.documentElement, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 					var expando = l.snapshotItem(0);
 					if(expando != null) {
-						expando.onclick = function() {
-							addLink(id);
+						expando.onmousedown = function(e) {
+							if (e.button === 0) {
+								addLink(id);
+							}
 						}
 					}
 					
@@ -379,15 +382,21 @@ function updateFunction(elm) {
 					if(comm != null) {
 						var commentcount = comm.innerHTML.split(' ')[0];
 						if(href == comm.href) {
-							comm.onclick = function () {
-								addSelf(id,commentcount);
+							comm.onmousedown = function (e) {
+								if (e.button === 0 || e.button === 1) {
+									addSelf(id,commentcount);
+								}
 							}
-							element.onclick = function() {
-								addSelf(id,commentcount);
+							element.onmousedown = function(e) {
+								if (e.button === 0 || e.button === 1) {
+									addSelf(id,commentcount);
+								}
 							}
 						} else {
-							comm.onclick = function () {
-								addComment(id,commentcount);
+							comm.onmousedown = function (e) {
+								if (e.button === 0 || e.button === 1) {
+									addComment(id,commentcount);
+								}
 							}
 						}
 						
@@ -410,7 +419,7 @@ function addLink(link) {
 		localStorage['synccit-link'] = array.toString();
 		clickedLink(link); // probably won't load since page is unloading. might work though
 	}
-	
+	markLink(link)
 }
 
 function addComment(link, count) {
@@ -422,7 +431,7 @@ function addComment(link, count) {
 		localStorage['synccit-comment'] = array.toString();
 		clickedComment(link, count);
 	}
-	
+	markLink(link)
 }
 
 function addSelf(link, count) {
@@ -434,7 +443,7 @@ function addSelf(link, count) {
 		localStorage['synccit-self'] = array.toString();
 		clickedSelf(link, count);
 	}
-	
+	markLink(link)
 }
 
 function clickedLink(link) {
