@@ -242,7 +242,7 @@ function markLink(link) {
 	//element.className += '.synccit-read'; // adding the class doesn't seem to let it overwrite style even with !important
 										  // d'oh needed dot at front. replacing classname breaks RES 
 	if(element != null) { // seems on self post this will end up null or something. not sure why
-		element.style.opacity = .4;
+		element.style.color = "#551a8b";
 	}
     
     console.log("marked link");
