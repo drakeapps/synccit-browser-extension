@@ -3,10 +3,10 @@
 // @name          synccit 
 // @namespace     https://synccit.com
 // @description   syncs your visited pages and read comments with synccit.com
-// @copyright     2017, Drake Apps, LLC (http://drakeapps.com/)
+// @copyright     2019, Drake Apps, LLC (https://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.12
+// @version		  1.13
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -17,6 +17,284 @@
 // ==/UserScript==
 // 
 
+
+// new design for new reddit
+
+// reddit link class
+class RedditLink {
+	constructor (id) {
+		this.id = id;
+
+		// have we fetched the link from synccit already
+		this.fetched = false;
+
+		// synccit variables
+		this.read = false;
+		this.synccitComments = false;
+
+		this.selector = null;
+		this.findContainer();
+
+		this.title = null;
+		this.findTitle();
+
+		this.linkSelectors = null;
+		this.findRedditLinks();
+
+		this.commentSpan = null;
+		this.findCommentSpan();
+
+		this.commentCount = null;
+		this.findCommentCount();
+
+		this.externalLink = null;
+		this.findExternalLink();
+	}
+
+	findContainer () {
+		// find the container div by the link id
+		let elem = document.getElementById('t3_' + this.id);
+
+		if (elem !== null) {
+			// found the container
+			this.selector = elem;
+		}
+	}
+
+	findRedditLinks () {
+		let elem = this.selector;
+		// a lot of things can link to the post, so just loop through them all, figure out which one points to the link, and add the selector
+		let links = elem.querySelectorAll('a');
+		let linkSelectors = new Array();
+		links.forEach(link => {
+			if ('href' in link && link.href.includes(this.id)) {
+				linkSelectors.push(link);
+			}
+		});
+		this.linkSelectors = linkSelectors;
+	}
+
+	findTitle() {
+		if (this.selector !== null) {
+			// title of the post is the h2
+			this.title = this.selector.querySelector('h2');
+		}
+	}
+
+	findCommentSpan() {
+		// this is looking for an attribute called `data-test-id`. hopefully they don't remove it
+		let commentContainer = this.selector.querySelector('a[data-test-id="comments-page-link-num-comments"] > span');
+		this.commentSpan = commentContainer;
+	}
+
+	findCommentCount() {
+		// we need the content of the container
+		let commentString = this.commentSpan.innerHTML;
+		// pull off the string comments
+		commentString = commentString.split(' ')[0];
+
+		let commentCount = 0;
+		// do some multiplication if we need to
+		if (commentString.includes('k')) {
+			commentString = commentString.replace('k','');
+			// new reddit drops resolution of >1k comments down to 100
+			commentCount = parseFloat(commentString) * 1000;
+		} else {
+			commentCount = parseFloat(commentString);
+		}
+		this.commentCount = commentCount;
+	}
+
+	findExternalLink() {
+		// loop through all the links
+		let links = this.selector.querySelectorAll('a');
+		links.forEach(link => {
+			if (link.querySelector('i.icon-outboundLink')) {
+				// found external link
+				this.externalLink = link;
+				return;
+			}
+		});
+	}
+
+	markRead() {
+		this.styleTitleRead();
+		if (typeof(this.synccitComments) === 'number' && typeof(this.commentCount === 'number') && this.commentCount > this.synccitComments) {
+			let newComments = this.commentCount - this.synccitComments;
+			this.addNewComments(newComments);
+		}
+	}
+
+	styleTitleRead() {
+		// dim the link
+		// this is a separate proc if we're wanting to color it or something in the future
+		this.title.style.opacity = .4;
+	}
+
+	addNewComments (comments) {
+		let newComments = this.commentSpan.querySelector('span.new-comments');
+		// we've already marked the read comments, so just replace the amount
+		if (newComments !== null) {
+			newComments.innerHTML = comments + ' new';
+		} else {
+			this.commentSpan.innerHTML += ' <span class="new-comments" style="color: red; font-weight: bold;">' + comments + ' new</span>';
+		}
+	}
+}
+
+
+class RedditLinks {
+	constructor () {
+		this.synccit = new Synccit();
+		this.links = new Array();
+		this.findAllLinks();
+
+		this.scrollHeight = document.body.clientHeight;
+		this.handleScrollFetch();
+
+	}
+
+	// loop through all link container and create RedditLink objects
+	findAllLinks() {
+		let linkSelectors = document.querySelectorAll('div.scrollerItem');
+		linkSelectors.forEach(link => {
+			if ('id' in link && link.id.includes('t3_')) {
+				// id looks like `t3_{id}`
+				// we actually pull off the t3_ to just put it back on in the RedditLink class
+				let id = link.id.replace('t3_', '');
+				// to skip promoted links and other garabge, make sure the id looks sane
+				if (id.length < 10) {
+					if (!this.containsLink(id)) {
+						this.links.push(new RedditLink(id));
+					}
+				}
+			}
+		});
+		// we might need a debounce here
+		this.synccit.fetchReadLinks(this);
+	}
+
+	// check whether we've already handled this link or not
+	containsLink(id) {
+		let elem = this.getLinkByID(id);
+		return elem !== null;
+	}
+
+	// find the link by id
+	getLinkByID (id) {
+		let elem = null;
+		this.links.forEach(link => {
+			if (link.id == id) {
+				elem = link;
+			}
+		});
+		return elem;
+	}
+
+	handleScrollFetch() {
+		// this is not great. there's probably a better way
+		// but this is what I could figure out with the time I alloted myself
+		// so we just check the height of the page every so often
+		// if it changed, fetch all the reddit links
+		setTimeout(() => {
+			if (this.scrollHeight !== document.body.clientHeight) {
+				this.scrollHeight = document.body.clientHeight;
+				this.findAllLinks();
+			}
+			this.handleScrollFetch();
+		}, 1000);
+	}
+
+}
+
+class Synccit {
+	constructor() {
+		this.username = null;
+		this.auth = null;
+		this.api = 'https://api.synccit.com/api.php';
+		this.hideLoginForm = false;
+
+		this.setup = false;
+
+		this.client = 'synccit-extension v1.' + chrome.runtime.getManifest().version;
+
+	}
+
+	setLogin (username, auth, api) {
+		this.username = username;
+		this.auth = auth;
+		if (api != undefined && api != 'undefined' && api != 'http://api.synccit.com/api.php') {
+			this.api = api;
+		}
+		this.setup = true;
+	}
+
+	fetchReadLinks (redditLinks) {
+		// synccit not setup, bail
+		if (!this.setup) {
+			return false;
+		}
+
+		// build the json request
+		let request = this.initialJSON();
+		request['mode'] = 'read';
+		request['links'] = [];
+
+		redditLinks.links.forEach(link => {
+			if (!link.fetched) {
+				request['links'].push({'id': link.id});
+				link.fetched = true;
+			}
+		});
+
+		let dataString = 'type=json&data=' + encodeURI(JSON.stringify(request));
+
+		// do the actual synccit request
+		let oReq = new XMLHttpRequest();
+		oReq.open("POST", this.api, true);
+		oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		oReq.send(dataString);
+		oReq.onload = () => {
+			if(oReq.status == 200) {
+				this.markReadLinks(redditLinks, oReq.response);
+			}
+		};
+
+	}
+
+	markReadLinks (redditLinks, response) {
+		let resp = JSON.parse(response);
+		resp.forEach(link => {
+			let reddLink = redditLinks.getLinkByID(link.id);
+			if (reddLink !== null) {
+				reddLink.read = true;
+				// lazy 0 check
+				if (link.commentvisit != '0') {
+					reddLink.synccitComments = parseInt(link.comments);
+				}
+				reddLink.markRead();
+			}
+		});
+	}
+
+	// the generic initial json setup for every call
+	initialJSON () {
+		let request = {};
+		request['username'] = this.username;
+		request['auth'] = this.auth;
+		request['dev'] = this.client;
+
+		return request;
+	}
+
+
+}
+
+
+var z = new RedditLinks();
+z.synccit.setLogin('james', 'zzzzzz', null);
+
+/*
 
 var username;// = localStorage['username'];
 var auth;// = localStorage['auth'];
@@ -700,3 +978,5 @@ function closePage() {
 
 
 });
+
+*/

@@ -5,7 +5,6 @@
         "include_globs":    [ "*" ],
         "js":               [ 	
 								"synccit.user.js"
- 								
 							],
         "matches":          [   "http://*.reddit.com/*",
 								"http://reddit.com/*",
@@ -22,11 +21,12 @@
         },
     "description":  "synccit syncs reddit.com visited links and viewed comments syncing across browsers and devices",
     "name":         "synccit for reddit",
-    "version":      "12",
+    "version":      "13",
     "short_name":   "synccit",
 	"permissions":	[	
-        "<all_urls>",
+        "*://reddit.com/*",
+		"*://*.reddit.com/*",
+		"*://*.synccit.com/*",
         "storage"
-						
-		]
+	]
 }
