@@ -32,6 +32,14 @@ class RedditLink {
 		this.read = false;
 		this.synccitComments = false;
 
+		// synccit submission variables
+		this.submitted = false;
+		this.clickedLink = false;
+		this.clickedComments = false;
+
+		// event listener status
+		this.listenersAdded = false;
+
 		this.selector = null;
 		this.findContainer();
 
@@ -140,6 +148,24 @@ class RedditLink {
 			this.commentSpan.innerHTML += ' <span class="new-comments" style="color: red; font-weight: bold;">' + comments + ' new</span>';
 		}
 	}
+
+	addListeners (redditLinks) {
+		this.linkSelectors.forEach(link => {
+			link.addEventListener('click', () => {
+				this.clickedComments = true;
+				this.submitted = false;
+				redditLinks.synccit.submitLinks(redditLinks.links);
+			});
+		});
+		if (this.externalLink !== null) {
+			this.externalLink.addEventListener('click', () => {
+				this.clickedLink = true;
+				this.submitted = false;
+				redditLinks.synccit.submitLinks(redditLinks.links);
+			});
+		}
+		this.listenersAdded = true;
+	}
 }
 
 
@@ -165,7 +191,9 @@ class RedditLinks {
 				// to skip promoted links and other garabge, make sure the id looks sane
 				if (id.length < 10) {
 					if (!this.containsLink(id)) {
-						this.links.push(new RedditLink(id));
+						let newLink = new RedditLink(id);
+						this.links.push(newLink);
+						newLink.addListeners(this);
 					}
 				}
 			}
@@ -275,6 +303,43 @@ class Synccit {
 				reddLink.markRead();
 			}
 		});
+	}
+
+	submitLinks (links) {
+		let request = this.initialJSON();
+		request['mode'] = "update";
+		request['links'] = [];
+		links.forEach(link => {
+			if (!link.submitted && (link.clickedLink || link.clickedComments)) {
+				let submission = {'id': link.id};
+				// check if they clicked the comments vs the link
+				if (link.clickedComments) {
+					submission['comments'] = link.commentCount;
+					// if the comment was the link, then update both
+					if (link.clickedLink) {
+						submission['both'] = true;
+					}
+				}
+				request['links'].push(submission);
+			}
+		});
+
+		// TODO: make this not a copy/paste job
+		let dataString = 'type=json&data=' + encodeURI(JSON.stringify(request));
+		// do the actual synccit request
+		let oReq = new XMLHttpRequest();
+		oReq.open("POST", this.api, true);
+		oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		oReq.send(dataString);
+		oReq.onload = () => {
+			if(oReq.status == 200) {
+				links.forEach(link => {
+					link.submitted = true;
+					link.clickedComments = false;
+					link.clickedLink = false;
+				});
+			}
+		};
 	}
 
 	// the generic initial json setup for every call
