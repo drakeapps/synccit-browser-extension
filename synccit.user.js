@@ -92,6 +92,11 @@ class RedditLink {
 	findCommentSpan() {
 		// this is looking for an attribute called `data-test-id`. hopefully they don't remove it
 		let commentContainer = this.selector.querySelector('a[data-test-id="comments-page-link-num-comments"] > span');
+		if (commentContainer === null) {
+			// single page view
+			commentContainer = this.selector.querySelector('div > i.icon-comment');
+			commentContainer = commentContainer.parentElement.querySelector('span');
+		}
 		this.commentSpan = commentContainer;
 	}
 
@@ -173,6 +178,7 @@ class RedditLinks {
 	constructor () {
 		this.synccit = new Synccit();
 		this.links = new Array();
+		this.init = false;
 		this.findAllLinks();
 
 		this.scrollHeight = document.body.clientHeight;
@@ -182,7 +188,7 @@ class RedditLinks {
 
 	// loop through all link container and create RedditLink objects
 	findAllLinks() {
-		let linkSelectors = document.querySelectorAll('div.scrollerItem');
+		let linkSelectors = document.querySelectorAll('div.scrollerItem, div.Post');
 		linkSelectors.forEach(link => {
 			if ('id' in link && link.id.includes('t3_')) {
 				// id looks like `t3_{id}`
@@ -198,6 +204,11 @@ class RedditLinks {
 				}
 			}
 		});
+		// only one link, mark it as read
+		if (this.links.length === 1 && this.init === false) {
+			this.init = true;
+			this.synccit.submitLinks(this.links);
+		}
 		// we might need a debounce here
 		this.synccit.fetchReadLinks(this);
 	}
@@ -274,6 +285,11 @@ class Synccit {
 				link.fetched = true;
 			}
 		});
+
+		// don't make a request if we didn't find any links
+		if (request['links'].length === 0) {
+			return false;
+		}
 
 		let dataString = 'type=json&data=' + encodeURI(JSON.stringify(request));
 
