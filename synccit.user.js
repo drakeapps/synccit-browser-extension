@@ -20,6 +20,8 @@
 
 // new design for new reddit
 
+var version = '13';
+
 // reddit link class
 class RedditLink {
 	constructor (id) {
@@ -255,8 +257,18 @@ class Synccit {
 
 		this.setup = false;
 
-		this.client = 'synccit-extension v1.' + chrome.runtime.getManifest().version;
+		this.client = 'synccit-extension v1.' + this.getManifestVersion();
 
+		this.settings = new SynccitSettings(this);
+
+	}
+
+	getManifestVersion () {
+		if (typeof(chrome) !== undefined) {
+			return chrome.runtime.getManifest().version;
+		} else {
+			return version;
+		}
 	}
 
 	setLogin (username, auth, api) {
@@ -368,12 +380,223 @@ class Synccit {
 		return request;
 	}
 
+	getCleanUsername() {
+		return this.username !== null ? this.username : '';
+	}
+	getCleanAuth() {
+		return this.auth !== null ? this.auth : '';
+	}
+	getCleanApi() {
+		return this.api !== null ? this.api : '';
+	}
 
 }
 
+class SynccitSettings {
+	constructor (synccit) {
+		this.synccit = synccit;
+		this.init = true;
+
+		this.hideSettings = false;
+		this.shouldShowSettings();
+
+		this.addSettingsLink();
+
+		this.chromeLogin();
+	}
+
+	shouldShowSettings() {
+		if (!this.isUndefined(localStorage['synccit-hideSettings']) && localStorage['synccit-hideSettings'] == true) {
+			this.hideSettings = true;
+		}
+	}
+
+	chromeLogin() {
+		// see if we can login the fancy chrome way. fall back to localstorage if we can't
+		if (typeof(chrome) !== undefined) {
+			chrome.storage.sync.get(["username", "auth", "api"], items => {
+				if (!this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
+					this.synccit.setLogin(items['username'], items['auth'], items['api']);
+				} else {
+					this.localStorageLogin();
+				}
+			});
+		} else {
+			this.localStorageLogin();
+		}
+	}
+
+	localStorageLogin() {
+		if (!this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
+			this.synccit.setLogin(localStorage["synccit-username"], localStorage["synccit-auth"], localStorage["synccit-api"]);
+		} else if (!this.isUndefined(localStorage["username"]) && !this.isUndefined(localStorage["auth"]) && !this.isUndefined(localStorage["api"])) {
+			// migrate away from these localstorage locations
+			this.synccit.setLogin(localStorage["username"], localStorage["auth"], localStorage["api"]);
+			this.storeLocalStorageLogin();
+			this.clearOldLocalStorage();
+		} else {
+			this.showLoginForm();
+		}
+	}
+
+	storeLocalStorageLogin() {
+		localStorage['synccit-username'] = this.synccit.username;
+		localStorage['synccit-auth'] = this.synccit.auth;
+		localStorage['synccit-api'] = this.synccit.api;
+	}
+
+	clearOldLocalStorage() {
+		localStorage['username'] = null;
+		localStorage['auth'] = null;
+		localStorage['api'] = null;
+	}
+
+	storeChromeLogin() {
+		if (typeof(chrome) !== undefined) {
+			chrome.storage.sync.set({"username":this.synccit.username, "auth":this.synccit.auth, "api":this.synccit.api});
+			chrome.storage.local.set({"username":this.synccit.username, "auth":this.synccit.auth, "api":this.synccit.api});
+		}
+	}
+
+	saveSynccitSettings() {
+		this.synccit.setLogin(
+			document.getElementById('synccitUsername').value,
+			document.getElementById('synccitAuth').value,
+			document.getElementById('synccitApi').value
+		);
+		this.storeChromeLogin();
+		this.storeLocalStorageLogin();
+		location.reload();
+	}
+
+	hideSynccitSettings() {
+		this.hideSettings = true;
+		localStorage['synccit-hideSettings'] = true;
+		location.reload();
+	}
+
+	// utility check that item is not undefined or 'undefined'
+	// i don't 100% remember why this was needed, but i do remember an edge case where this was needed
+	isUndefined (value) {
+		return value == undefined || value == 'undefined';
+	}
+
+	addSettingsLink() {
+		let item = document.createElement('a');
+		item.innerHTML = 'Synccit';
+		item.id = 'synccitSettingsButton';
+
+		item.onclick = (e) => {
+			this.hideSettings = false;
+			this.showLoginForm();
+		}
+
+		document.getElementById('header-quicklinks-oc').parentElement.appendChild(item);
+	}
+
+	showLoginForm() {
+		// don't get in a loop of showing the settings screen, hitting cancel will prevent it from showing up again
+		if (this.hideSettings) {
+			return false;
+		}
+		document.body.style = 'width: 100%; height: 100%;';
+		document.body.innerHTML = `
+		<div style="display: flex; text-align: center; align-items: center; justify-content: center; font-family: IBMPlexSans,sans-serif; margin-top: 50px;">
+			<div style="display: flex; flex-direction: column; min-width: 500px; border: 2px solid #ccc; border-radius: 10px; padding: 20px;">
+				<h1 style="font-size: 200%; font-weight: 300;">synccit login</h1><br><br>
+				<p>
+					<fieldset class="AnimatedForm__field m-required login hideable">
+						<input type="text" id="synccitUsername" placeholder="username" value="${this.synccit.getCleanUsername()}" class="AnimatedForm__textInput" style="
+							font-size: 120%;
+							max-width: 100%;
+							width: 400px;
+							padding: 10px;
+							border: 1px solid rgba(0,0,0,.2);
+							border-radius: 4px;
+							background-color: #fcfcfb;
+							margin-bottom: 15px;
+						">
+					</fieldset>
+					<fieldset class="AnimatedForm__field m-required login hideable">
+						<input type="text" id="synccitAuth" placeholder="auth code" value="${this.synccit.getCleanAuth()}" class="AnimatedForm__textInput" style="
+							font-size: 120%;
+							max-width: 100%;
+							width: 400px;
+							padding: 10px;
+							border: 1px solid rgba(0,0,0,.2);
+							border-radius: 4px;
+							background-color: #fcfcfb;
+							margin-bottom: 15px;
+						">
+					</fieldset>
+					<fieldset class="AnimatedForm__field m-required login hideable">
+						<input type="text" id="synccitApi" placeholder="api url" value="${this.synccit.getCleanApi()}" class="AnimatedForm__textInput" style="
+							font-size: 120%;
+							max-width: 100%;
+							width: 400px;
+							padding: 10px;
+							border: 1px solid rgba(0,0,0,.2);
+							border-radius: 4px;
+							background-color: #fcfcfb;
+							margin-bottom: 15px;
+						">
+					</fieldset>
+
+					<fieldset class="AnimatedForm__field m-required login hideable">
+						<button class="AnimatedForm__submitButton" id="synccitSubmit" style="
+							color: #fff;
+							border-radius: 4px;
+							text-align: center;
+							background: #0079d3;
+							cursor: pointer;
+
+							font-size: 120%;
+								max-width: 100%;
+								width: 400px;
+								padding: 10px;
+								border: 1px solid rgba(0,0,0,.2);
+								border-radius: 4px;
+								background-color: #0079d3;
+								margin-bottom: 15px;
+						">Submit</button>
+					</fieldset>
+
+					<fieldset class="AnimatedForm__field m-required login hideable">
+						<button class="AnimatedForm__submitButton" id="synccitCancel" style="
+							color: #fff;
+							border-radius: 4px;
+							text-align: center;
+							background: #0079d3;
+							cursor: pointer;
+
+							font-size: 120%;
+								max-width: 100%;
+								width: 400px;
+								padding: 10px;
+								border: 1px solid rgba(0,0,0,.2);
+								border-radius: 4px;
+								background-color: rgb(255, 69, 0);
+								margin-bottom: 15px;
+						">Cancel</button>
+					</fieldset>
+				</p>
+			</div>
+		</div>`;
+
+		document.getElementById('synccitSubmit').onclick = (e) => {
+			this.saveSynccitSettings();
+		};
+
+		document.getElementById('synccitCancel').onclick = (e) => {
+			this.hideSynccitSettings();
+		}
+	}
+
+}
 
 var z = new RedditLinks();
-z.synccit.setLogin('james', 'zzzzzz', null);
+
+
 
 /*
 
