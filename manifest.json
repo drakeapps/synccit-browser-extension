@@ -13,7 +13,6 @@
                             ],
         "run_at": "document_end"
     } ],
-    "converted_from_user_script": true,
     "icons":        {
             "16"    : "icon16.png",
             "48"    : "icon48.png",
