@@ -22,10 +22,86 @@
 
 var version = '13';
 
+
+class NewRedditSelectors {
+	
+	getContainer(id) {
+		return document.getElementById('t3_' + id)
+	}
+	getRedditLinks(elem) {
+		return elem.querySelectorAll('a');
+	}
+	getTitle(elem) {
+		return elem.querySelector('h2');
+	}
+	getCommentsAll(elem) {
+		return elem.querySelector('a[data-test-id="comments-page-link-num-comments"] > span');
+	}
+	getCommentsSingle(elem) {
+		let commentContainer = elem.querySelector('div > i.icon-comment');
+		return commentContainer.parentElement.querySelector('span')
+	}
+	getAllLinks(elem) {
+		return this.getRedditLinks(elem);
+	}
+	getAllContainers() {
+		return document.querySelectorAll('div.scrollerItem, div.Post');
+	}
+	getButtonLocation() {
+		return document.getElementById('header-quicklinks-oc').parentElement;
+	}
+	getAddNewComment(elem) {
+		return elem.querySelector('span.new-comments');
+	}
+
+	isOutboundLink(link) {
+		return link.querySelector('i.icon-outboundLink');
+	}
+}
+
+class OldRedditSelectors {
+	
+	getContainer(id) {
+		return document.getElementById('thing_t3_' + id)
+	}
+	getRedditLinks(elem) {
+		return elem.querySelectorAll('a');
+	}
+	getTitle(elem) {
+		return elem.querySelector('a.title');
+	}
+	getCommentsAll(elem) {
+		return elem.querySelector('a.comments');
+	}
+	getCommentsSingle(elem) {
+		return elem.querySelector('a.comments');
+		// return commentContainer.parentElement.querySelector('span')
+	}
+	getAllLinks(elem) {
+		return this.getRedditLinks(elem);
+	}
+	getAllContainers() {
+		return document.querySelectorAll('#siteTable > .link');
+	}
+	getButtonLocation() {
+		return document.getElementById('header-bottom-right');
+	}
+	getAddNewComment(elem) {
+		return elem.querySelector('span.new-comments');
+	}
+
+	isOutboundLink(link) {
+		return link.querySelector('i.icon-outboundLink');
+	}
+}
+
+
+
 // reddit link class
 class RedditLink {
-	constructor (id) {
+	constructor (id, selectors) {
 		this.id = id;
+		this.selectors = selectors;
 
 		// have we fetched the link from synccit already
 		this.fetched = false;
@@ -63,7 +139,7 @@ class RedditLink {
 
 	findContainer () {
 		// find the container div by the link id
-		let elem = document.getElementById('t3_' + this.id);
+		let elem = this.selectors.getContainer(this.id);
 
 		if (elem !== null) {
 			// found the container
@@ -74,7 +150,7 @@ class RedditLink {
 	findRedditLinks () {
 		let elem = this.selector;
 		// a lot of things can link to the post, so just loop through them all, figure out which one points to the link, and add the selector
-		let links = elem.querySelectorAll('a');
+		let links = this.selectors.getRedditLinks(elem);
 		let linkSelectors = new Array();
 		links.forEach(link => {
 			if ('href' in link && link.href.includes(this.id)) {
@@ -87,17 +163,16 @@ class RedditLink {
 	findTitle() {
 		if (this.selector !== null) {
 			// title of the post is the h2
-			this.title = this.selector.querySelector('h2');
+			this.title = this.selectors.getTitle(this.selector);
 		}
 	}
 
 	findCommentSpan() {
 		// this is looking for an attribute called `data-test-id`. hopefully they don't remove it
-		let commentContainer = this.selector.querySelector('a[data-test-id="comments-page-link-num-comments"] > span');
+		let commentContainer = this.selectors.getCommentsAll(this.selector);
 		if (commentContainer === null) {
 			// single page view
-			commentContainer = this.selector.querySelector('div > i.icon-comment');
-			commentContainer = commentContainer.parentElement.querySelector('span');
+			commentContainer = this.selectors.getCommentsSingle(this.selector);
 		}
 		this.commentSpan = commentContainer;
 	}
@@ -122,9 +197,9 @@ class RedditLink {
 
 	findExternalLink() {
 		// loop through all the links
-		let links = this.selector.querySelectorAll('a');
+		let links = this.selectors.getAllLinks(this.selector);
 		links.forEach(link => {
-			if (link.querySelector('i.icon-outboundLink')) {
+			if (this.selectors.isOutboundLink(link)) {
 				// found external link
 				this.externalLink = link;
 				return;
@@ -147,7 +222,7 @@ class RedditLink {
 	}
 
 	addNewComments (comments) {
-		let newComments = this.commentSpan.querySelector('span.new-comments');
+		let newComments = this.selectors.getAddNewComment(this.commentSpan);
 		// we've already marked the read comments, so just replace the amount
 		if (newComments !== null) {
 			newComments.innerHTML = comments + ' new';
@@ -178,7 +253,8 @@ class RedditLink {
 
 class RedditLinks {
 	constructor () {
-		this.synccit = new Synccit();
+		this.selectors = this.getRedditSelectors();
+		this.synccit = new Synccit(this.selectors);
 		this.links = new Array();
 		this.init = false;
 		this.findAllLinks();
@@ -188,18 +264,26 @@ class RedditLinks {
 
 	}
 
+	getRedditSelectors () {
+		if (document.querySelector('#sr-header-area')) {
+			return new OldRedditSelectors();
+		} else {
+			return new NewRedditSelectors();
+		}
+	}
+
 	// loop through all link container and create RedditLink objects
 	findAllLinks() {
-		let linkSelectors = document.querySelectorAll('div.scrollerItem, div.Post');
+		let linkSelectors = this.selectors.getAllContainers();
 		linkSelectors.forEach(link => {
 			if ('id' in link && link.id.includes('t3_')) {
 				// id looks like `t3_{id}`
 				// we actually pull off the t3_ to just put it back on in the RedditLink class
-				let id = link.id.replace('t3_', '');
+				let id = link.id.replace('t3_', '').replace('thing_','');
 				// to skip promoted links and other garabge, make sure the id looks sane
 				if (id.length < 10) {
 					if (!this.containsLink(id)) {
-						let newLink = new RedditLink(id);
+						let newLink = new RedditLink(id,this.selectors);
 						this.links.push(newLink);
 						newLink.addListeners(this);
 					}
@@ -249,7 +333,8 @@ class RedditLinks {
 }
 
 class Synccit {
-	constructor() {
+	constructor(selectors) {
+		this.selectors = selectors;
 		this.username = null;
 		this.auth = null;
 		this.api = 'https://api.synccit.com/api.php';
@@ -272,6 +357,7 @@ class Synccit {
 	}
 
 	setLogin (username, auth, api) {
+		console.log('synccit logging in with:', {'username': username, 'auth': auth, 'api': api});
 		this.username = username;
 		this.auth = auth;
 		if (api != undefined && api != 'undefined' && api != 'http://api.synccit.com/api.php') {
@@ -283,6 +369,11 @@ class Synccit {
 	fetchReadLinks (redditLinks) {
 		// synccit not setup, bail
 		if (!this.setup) {
+			console.log('bailed');
+			// old reddit can be parsed before we set up synccit, so just keep retrying every second
+			setTimeout(() => {
+				this.fetchReadLinks(redditLinks);
+			}, 1000);
 			return false;
 		}
 
@@ -416,9 +507,17 @@ class SynccitSettings {
 		if (typeof(chrome) !== undefined) {
 			chrome.storage.sync.get(["username", "auth", "api"], items => {
 				if (!this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
+					console.log('chrome sync login');
 					this.synccit.setLogin(items['username'], items['auth'], items['api']);
 				} else {
-					this.localStorageLogin();
+					chrome.storage.local.get(["username", "auth", "api"], items => {
+						if (!this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
+							console.log('chrome local login');
+							this.synccit.setLogin(items['username'], items['auth'], items['api']);
+						} else {
+							this.localStorageLogin();
+						}
+					});
 				}
 			});
 		} else {
@@ -428,6 +527,7 @@ class SynccitSettings {
 
 	localStorageLogin() {
 		if (!this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
+			console.log('local storage login');
 			this.synccit.setLogin(localStorage["synccit-username"], localStorage["synccit-auth"], localStorage["synccit-api"]);
 		} else if (!this.isUndefined(localStorage["username"]) && !this.isUndefined(localStorage["auth"]) && !this.isUndefined(localStorage["api"])) {
 			// migrate away from these localstorage locations
@@ -485,13 +585,14 @@ class SynccitSettings {
 		let item = document.createElement('a');
 		item.innerHTML = 'Synccit';
 		item.id = 'synccitSettingsButton';
+		item.style = "cursor: pointer;";
 
 		item.onclick = (e) => {
 			this.hideSettings = false;
 			this.showLoginForm();
 		}
 
-		document.getElementById('header-quicklinks-oc').parentElement.appendChild(item);
+		this.synccit.selectors.getButtonLocation().appendChild(item);
 	}
 
 	showLoginForm() {
