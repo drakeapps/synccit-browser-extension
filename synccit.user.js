@@ -65,7 +65,7 @@ class OldRedditSelectors {
 		return document.getElementById('thing_t3_' + id)
 	}
 	getRedditLinks(elem) {
-		return elem.querySelectorAll('a');
+		return elem.querySelectorAll('a, div.expando-button');
 	}
 	getTitle(elem) {
 		return elem.querySelector('a.title');
@@ -153,7 +153,7 @@ class RedditLink {
 		let links = this.selectors.getRedditLinks(elem);
 		let linkSelectors = new Array();
 		links.forEach(link => {
-			if ('href' in link && link.href.includes(this.id)) {
+			if (('href' in link && link.href.includes(this.id)) || link.classList.contains('expando-button')) {
 				linkSelectors.push(link);
 			}
 		});
