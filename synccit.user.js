@@ -369,7 +369,6 @@ class Synccit {
 	fetchReadLinks (redditLinks) {
 		// synccit not setup, bail
 		if (!this.setup) {
-			console.log('bailed');
 			// old reddit can be parsed before we set up synccit, so just keep retrying every second
 			setTimeout(() => {
 				this.fetchReadLinks(redditLinks);
@@ -425,6 +424,13 @@ class Synccit {
 	}
 
 	submitLinks (links) {
+		if (!this.setup) {
+			// old reddit can be parsed before we set up synccit, so just keep retrying every second
+			setTimeout(() => {
+				this.submitLinks(links);
+			}, 1000);
+			return false;
+		}
 		let request = this.initialJSON();
 		request['mode'] = "update";
 		request['links'] = [];
@@ -506,13 +512,11 @@ class SynccitSettings {
 		// see if we can login the fancy chrome way. fall back to localstorage if we can't
 		if (typeof(chrome) !== undefined) {
 			chrome.storage.sync.get(["username", "auth", "api"], items => {
-				if (!this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
-					console.log('chrome sync login');
+				if (typeof items === 'object' && !this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
 					this.synccit.setLogin(items['username'], items['auth'], items['api']);
 				} else {
 					chrome.storage.local.get(["username", "auth", "api"], items => {
 						if (!this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
-							console.log('chrome local login');
 							this.synccit.setLogin(items['username'], items['auth'], items['api']);
 						} else {
 							this.localStorageLogin();
@@ -526,8 +530,7 @@ class SynccitSettings {
 	}
 
 	localStorageLogin() {
-		if (!this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
-			console.log('local storage login');
+		if (typeof items === 'object' && !this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
 			this.synccit.setLogin(localStorage["synccit-username"], localStorage["synccit-auth"], localStorage["synccit-api"]);
 		} else if (!this.isUndefined(localStorage["username"]) && !this.isUndefined(localStorage["auth"]) && !this.isUndefined(localStorage["api"])) {
 			// migrate away from these localstorage locations
