@@ -530,7 +530,7 @@ class SynccitSettings {
 	}
 
 	localStorageLogin() {
-		if (typeof items === 'object' && !this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
+		if (!this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
 			this.synccit.setLogin(localStorage["synccit-username"], localStorage["synccit-auth"], localStorage["synccit-api"]);
 		} else if (!this.isUndefined(localStorage["username"]) && !this.isUndefined(localStorage["auth"]) && !this.isUndefined(localStorage["api"])) {
 			// migrate away from these localstorage locations
