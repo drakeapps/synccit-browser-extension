@@ -549,9 +549,9 @@ class SynccitSettings {
 	}
 
 	clearOldLocalStorage() {
-		localStorage['username'] = null;
-		localStorage['auth'] = null;
-		localStorage['api'] = null;
+		localStorage['username'] = undefined;
+		localStorage['auth'] = undefined;
+		localStorage['api'] = undefined;
 	}
 
 	storeChromeLogin() {
