@@ -349,7 +349,7 @@ class Synccit {
 	}
 
 	getManifestVersion () {
-		if (typeof(chrome) !== undefined) {
+		if (typeof(chrome) !== 'undefined') {
 			return chrome.runtime.getManifest().version;
 		} else {
 			return version;
@@ -510,7 +510,7 @@ class SynccitSettings {
 
 	chromeLogin() {
 		// see if we can login the fancy chrome way. fall back to localstorage if we can't
-		if (typeof(chrome) !== undefined) {
+		if (typeof(chrome) !== 'undefined') {
 			chrome.storage.sync.get(["username", "auth", "api"], items => {
 				if (typeof items === 'object' && !this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
 					this.synccit.setLogin(items['username'], items['auth'], items['api']);
@@ -555,7 +555,7 @@ class SynccitSettings {
 	}
 
 	storeChromeLogin() {
-		if (typeof(chrome) !== undefined) {
+		if (typeof(chrome) !== 'undefined') {
 			chrome.storage.sync.set({"username":this.synccit.username, "auth":this.synccit.auth, "api":this.synccit.api});
 			chrome.storage.local.set({"username":this.synccit.username, "auth":this.synccit.auth, "api":this.synccit.api});
 		}
