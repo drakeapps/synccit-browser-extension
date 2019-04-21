@@ -349,7 +349,7 @@ class Synccit {
 	}
 
 	getManifestVersion () {
-		if (typeof(chrome) !== undefined) {
+		if (typeof(chrome) !== 'undefined') {
 			return chrome.runtime.getManifest().version;
 		} else {
 			return version;
@@ -510,7 +510,7 @@ class SynccitSettings {
 
 	chromeLogin() {
 		// see if we can login the fancy chrome way. fall back to localstorage if we can't
-		if (typeof(chrome) !== undefined) {
+		if (typeof(chrome) !== 'undefined') {
 			chrome.storage.sync.get(["username", "auth", "api"], items => {
 				if (typeof items === 'object' && !this.isUndefined(items["api"]) && !this.isUndefined(items['username']) && !this.isUndefined(items['auth'])) {
 					this.synccit.setLogin(items['username'], items['auth'], items['api']);
@@ -530,7 +530,7 @@ class SynccitSettings {
 	}
 
 	localStorageLogin() {
-		if (typeof items === 'object' && !this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
+		if (!this.isUndefined(localStorage["synccit-username"]) && !this.isUndefined(localStorage["synccit-auth"]) && !this.isUndefined(localStorage["synccit-api"])) {
 			this.synccit.setLogin(localStorage["synccit-username"], localStorage["synccit-auth"], localStorage["synccit-api"]);
 		} else if (!this.isUndefined(localStorage["username"]) && !this.isUndefined(localStorage["auth"]) && !this.isUndefined(localStorage["api"])) {
 			// migrate away from these localstorage locations
@@ -549,13 +549,13 @@ class SynccitSettings {
 	}
 
 	clearOldLocalStorage() {
-		localStorage['username'] = null;
-		localStorage['auth'] = null;
-		localStorage['api'] = null;
+		localStorage['username'] = undefined;
+		localStorage['auth'] = undefined;
+		localStorage['api'] = undefined;
 	}
 
 	storeChromeLogin() {
-		if (typeof(chrome) !== undefined) {
+		if (typeof(chrome) !== 'undefined') {
 			chrome.storage.sync.set({"username":this.synccit.username, "auth":this.synccit.auth, "api":this.synccit.api});
 			chrome.storage.local.set({"username":this.synccit.username, "auth":this.synccit.auth, "api":this.synccit.api});
 		}
