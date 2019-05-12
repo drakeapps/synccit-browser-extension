@@ -6,7 +6,7 @@
 // @copyright     2019, Drake Apps, LLC (https://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.13
+// @version		  1.13.1
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -21,7 +21,7 @@
 // new design for new reddit
 
 var version = '13';
-
+var isUsingNewReddit = false;
 
 class NewRedditSelectors {
 	
@@ -86,10 +86,12 @@ class OldRedditSelectors {
 	getButtonLocation() {
 		return document.getElementById('header-bottom-right');
 	}
+	getLogoutButton() {
+		return document.getElementsByClassName('logout');
+	}
 	getAddNewComment(elem) {
 		return elem.querySelector('span.new-comments');
 	}
-
 	isOutboundLink(link) {
 		return link.querySelector('i.icon-outboundLink');
 	}
@@ -267,8 +269,10 @@ class RedditLinks {
 	getRedditSelectors () {
 		if (document.querySelector('#sr-header-area')) {
 			return new OldRedditSelectors();
+			isUsingNewReddit = false;
 		} else {
 			return new NewRedditSelectors();
+			isUsingNewReddit = true;
 		}
 	}
 
@@ -585,17 +589,39 @@ class SynccitSettings {
 	}
 
 	addSettingsLink() {
+		var spacer = "<span class=\"separator\">|</span>"
+		var btnCSS = 
+			`#synccitSettingsButton { 
+				color: #369
+				cursor: pointer;
+			}
+
+			#synccitSettingsButton:hover {
+				text-decoration-line: underline;
+			}`;
+		var nmBtnCSS = 
+			`body[lang|="nm"] #synccitSettingsButton,
+			.res .res-nightmode #synccitSettingsButton {
+				color: #8cb3d9;
+			}`;
 		let item = document.createElement('a');
 		item.innerHTML = 'Synccit';
 		item.id = 'synccitSettingsButton';
-		item.style = "cursor: pointer;";
 
 		item.onclick = (e) => {
 			this.hideSettings = false;
 			this.showLoginForm();
 		}
-
-		this.synccit.selectors.getButtonLocation().appendChild(item);
+		
+		if (isUsingNewReddit) {
+			this.synccit.selectors.getButtonLocation().appendChild(item);
+			window.document.styleSheets[0].insertRule(btnCSS, sheet.cssRules.length);
+		} else {
+			this.synccit.selectors.getLogoutButton().before(item);
+			item.after(spacer);
+			window.document.styleSheets[0].insertRule(btnCSS, sheet.cssRules.length);
+			window.document.styleSheets[0].insertRule(nmBtnCSS, sheet.cssRules.length);
+		}
 	}
 
 	showLoginForm() {
