@@ -6,7 +6,7 @@
 // @copyright     2019, Drake Apps, LLC (https://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.13
+// @version		  1.14
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -20,7 +20,7 @@
 
 // new design for new reddit
 
-var version = '13';
+var version = '14';
 
 
 class NewRedditSelectors {
@@ -32,7 +32,11 @@ class NewRedditSelectors {
 		return elem.querySelectorAll('a');
 	}
 	getTitle(elem) {
-		return elem.querySelector('h2');
+		if (elem.querySelector('h2')) {
+			return elem.querySelector('h2');
+		} else {
+			return elem.querySelector('h1');
+		}
 	}
 	getCommentsAll(elem) {
 		return elem.querySelector('a[data-test-id="comments-page-link-num-comments"] > span');
@@ -218,7 +222,9 @@ class RedditLink {
 	styleTitleRead() {
 		// dim the link
 		// this is a separate proc if we're wanting to color it or something in the future
-		this.title.style.opacity = .4;
+		if (this.title !== null) {
+			this.title.style.opacity = .4;
+		}
 	}
 
 	addNewComments (comments) {
@@ -292,6 +298,8 @@ class RedditLinks {
 		});
 		// only one link, mark it as read
 		if (this.links.length === 1 && this.init === false) {
+			this.links[0].clickedLink = true;
+			this.links[0].clickedComments = true;
 			this.init = true;
 			this.synccit.submitLinks(this.links);
 		}
