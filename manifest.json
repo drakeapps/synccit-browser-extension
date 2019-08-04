@@ -20,7 +20,7 @@
         },
     "description":  "synccit syncs reddit.com visited links and viewed comments syncing across browsers and devices",
     "name":         "synccit for reddit",
-    "version":      "14",
+    "version":      "15",
     "short_name":   "synccit",
 	"permissions":	[	
         "*://reddit.com/*",

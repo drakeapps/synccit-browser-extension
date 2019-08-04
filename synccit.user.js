@@ -6,7 +6,7 @@
 // @copyright     2019, Drake Apps, LLC (https://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.14
+// @version		  1.15
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -20,7 +20,7 @@
 
 // new design for new reddit
 
-var version = '14';
+var version = '15';
 
 
 class NewRedditSelectors {
@@ -95,7 +95,7 @@ class OldRedditSelectors {
 	}
 
 	isOutboundLink(link) {
-		return link.querySelector('i.icon-outboundLink');
+		return (link.classList.contains('outbound') || link.classList.contains('expando-button'));
 	}
 }
 
@@ -137,8 +137,8 @@ class RedditLink {
 		this.commentCount = null;
 		this.findCommentCount();
 
-		this.externalLink = null;
-		this.findExternalLink();
+		this.externalLinks = [];
+		this.findExternalLinks();
 	}
 
 	findContainer () {
@@ -157,7 +157,7 @@ class RedditLink {
 		let links = this.selectors.getRedditLinks(elem);
 		let linkSelectors = new Array();
 		links.forEach(link => {
-			if (('href' in link && link.href.includes(this.id)) || link.classList.contains('expando-button')) {
+			if (('href' in link && link.href.includes(this.id))) {
 				linkSelectors.push(link);
 			}
 		});
@@ -199,14 +199,13 @@ class RedditLink {
 		this.commentCount = commentCount;
 	}
 
-	findExternalLink() {
+	findExternalLinks() {
 		// loop through all the links
 		let links = this.selectors.getAllLinks(this.selector);
 		links.forEach(link => {
 			if (this.selectors.isOutboundLink(link)) {
 				// found external link
-				this.externalLink = link;
-				return;
+				this.externalLinks.push(link);
 			}
 		});
 	}
@@ -239,19 +238,21 @@ class RedditLink {
 
 	addListeners (redditLinks) {
 		this.linkSelectors.forEach(link => {
-			link.addEventListener('click', () => {
+			link.addEventListener('mousedown', () => {
 				this.clickedComments = true;
 				this.submitted = false;
 				redditLinks.synccit.submitLinks(redditLinks.links);
+				return true;
 			});
 		});
-		if (this.externalLink !== null) {
-			this.externalLink.addEventListener('click', () => {
+		this.externalLinks.forEach(link => {
+			link.addEventListener('mousedown', () => {
 				this.clickedLink = true;
 				this.submitted = false;
 				redditLinks.synccit.submitLinks(redditLinks.links);
+				return true;
 			});
-		}
+		});
 		this.listenersAdded = true;
 	}
 }
@@ -340,6 +341,89 @@ class RedditLinks {
 
 }
 
+class SynccitSender {
+	constructor (username, auth, api) {
+		this.username = username;
+		this.auth = auth;
+		this.api = api;
+
+		this.queue = [];
+
+		this.loadItems();
+
+		this.processing = false;
+
+		this.intervalId = setInterval(() => { 
+			this.sendItems();
+		}, 10000);
+	}
+
+	// pull the current queue from localstorage
+	loadItems () {
+		if (localStorage["synccit-queue"]) {
+			const data = JSON.parse(localStorage["synccit-queue"]);
+			data.forEach((item) => {
+				this.queue.push(item);
+			});
+		}
+	}
+
+	saveItems () {
+		localStorage['synccit-queue'] = JSON.stringify(this.queue);
+	}
+
+	addItem (item) {
+		item.processing = false;
+		this.queue.push(item);
+		this.saveItems();
+	}
+
+	sendItems () {
+		// only try when there's something to send
+		if (this.queue.length === 0) {
+			return false;
+		}
+		// only send one request at a time
+		if (!this.processing) {
+			this.processing = true;
+			let request = {};
+			request['username'] = this.username;
+			request['auth'] = this.auth;
+			request['dev'] = this.client;
+			request['mode'] = "update";
+			request['links'] = [];
+			this.queue.forEach(item => {
+				item.processing = true;
+			});
+			request['links'] = this.queue
+
+			let dataString = 'type=json&data=' + encodeURI(JSON.stringify(request));
+			// do the actual synccit request
+			let oReq = new XMLHttpRequest();
+			oReq.open("POST", this.api, true);
+			oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			oReq.send(dataString);
+			oReq.onload = () => {
+				this.processing = false;
+				if(oReq.status == 200) {
+					this.queue.forEach((item, index) => {
+						if (item.processing) {
+							this.queue.splice(index);
+						}
+					});
+				} else {
+					this.queue.forEach(item => {
+						item.processing = false;
+					});
+				}
+				this.saveItems();
+			};
+		}
+	}
+
+
+}
+
 class Synccit {
 	constructor(selectors) {
 		this.selectors = selectors;
@@ -353,6 +437,8 @@ class Synccit {
 		this.client = 'synccit-extension v1.' + this.getManifestVersion();
 
 		this.settings = new SynccitSettings(this);
+
+		this.synccitSender = null;
 
 	}
 
@@ -371,6 +457,7 @@ class Synccit {
 		if (api != undefined && api != 'undefined' && api != 'http://api.synccit.com/api.php') {
 			this.api = api;
 		}
+		this.synccitSender = new SynccitSender(username, auth, api);
 		this.setup = true;
 	}
 
@@ -439,9 +526,7 @@ class Synccit {
 			}, 1000);
 			return false;
 		}
-		let request = this.initialJSON();
-		request['mode'] = "update";
-		request['links'] = [];
+		
 		links.forEach(link => {
 			if (!link.submitted && (link.clickedLink || link.clickedComments)) {
 				let submission = {'id': link.id};
@@ -453,26 +538,10 @@ class Synccit {
 						submission['both'] = true;
 					}
 				}
-				request['links'].push(submission);
+				// request['links'].push(submission);
+				this.synccitSender.addItem(submission);
 			}
 		});
-
-		// TODO: make this not a copy/paste job
-		let dataString = 'type=json&data=' + encodeURI(JSON.stringify(request));
-		// do the actual synccit request
-		let oReq = new XMLHttpRequest();
-		oReq.open("POST", this.api, true);
-		oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-		oReq.send(dataString);
-		oReq.onload = () => {
-			if(oReq.status == 200) {
-				links.forEach(link => {
-					link.submitted = true;
-					link.clickedComments = false;
-					link.clickedLink = false;
-				});
-			}
-		};
 	}
 
 	// the generic initial json setup for every call
