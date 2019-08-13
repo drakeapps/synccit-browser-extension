@@ -6,7 +6,7 @@
 // @copyright     2019, Drake Apps, LLC (https://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.15
+// @version		  1.16
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -20,7 +20,7 @@
 
 // new design for new reddit
 
-var version = '15';
+var version = '16';
 
 
 class NewRedditSelectors {
@@ -58,6 +58,10 @@ class NewRedditSelectors {
 		return elem.querySelector('span.new-comments');
 	}
 
+	isAd (elem) {
+		// return elem.classList.contains('promoted');
+		return false;
+	}
 	isOutboundLink(link) {
 		return link.querySelector('i.icon-outboundLink');
 	}
@@ -94,6 +98,9 @@ class OldRedditSelectors {
 		return elem.querySelector('span.new-comments');
 	}
 
+	isAd (elem) {
+		return elem.classList.contains('promoted');
+	}
 	isOutboundLink(link) {
 		return (link.classList.contains('outbound') || link.classList.contains('expando-button'));
 	}
@@ -125,20 +132,25 @@ class RedditLink {
 		this.selector = null;
 		this.findContainer();
 
-		this.title = null;
-		this.findTitle();
+		this.isAd = false;
+		this.checkIfAd();
 
-		this.linkSelectors = null;
-		this.findRedditLinks();
+		if (!this.isAd) {
+			this.title = null;
+			this.findTitle();
 
-		this.commentSpan = null;
-		this.findCommentSpan();
+			this.linkSelectors = null;
+			this.findRedditLinks();
 
-		this.commentCount = null;
-		this.findCommentCount();
+			this.commentSpan = null;
+			this.findCommentSpan();
 
-		this.externalLinks = [];
-		this.findExternalLinks();
+			this.commentCount = null;
+			this.findCommentCount();
+
+			this.externalLinks = [];
+			this.findExternalLinks();
+		}
 	}
 
 	findContainer () {
@@ -149,6 +161,10 @@ class RedditLink {
 			// found the container
 			this.selector = elem;
 		}
+	}
+
+	checkIfAd() {
+		this.isAd = this.selectors.isAd(this.selector);
 	}
 
 	findRedditLinks () {
@@ -290,9 +306,15 @@ class RedditLinks {
 				// to skip promoted links and other garabge, make sure the id looks sane
 				if (id.length < 10) {
 					if (!this.containsLink(id)) {
-						let newLink = new RedditLink(id,this.selectors);
-						this.links.push(newLink);
-						newLink.addListeners(this);
+						try {
+							let newLink = new RedditLink(id,this.selectors);
+							if(!newLink.isAd) {
+								this.links.push(newLink);
+								newLink.addListeners(this);
+							}
+						} catch (error) {
+							console.log('error adding link: ', error);
+						}
 					}
 				}
 			}
@@ -349,6 +371,8 @@ class SynccitSender {
 
 		this.queue = [];
 
+		this.client = 'synccit-extension v1.' + this.getManifestVersion();
+
 		this.loadItems();
 
 		this.processing = false;
@@ -356,6 +380,14 @@ class SynccitSender {
 		this.intervalId = setInterval(() => { 
 			this.sendItems();
 		}, 10000);
+	}
+
+	getManifestVersion () {
+		if (typeof(chrome) !== 'undefined') {
+			return chrome.runtime.getManifest().version;
+		} else {
+			return version;
+		}
 	}
 
 	// pull the current queue from localstorage
