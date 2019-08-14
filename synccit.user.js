@@ -6,7 +6,7 @@
 // @copyright     2019, Drake Apps, LLC (https://drakeapps.com/)
 // @license       GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html/
 // @author		  James Wilson
-// @version		  1.16
+// @version		  1.17
 // @include       http://*.reddit.com/*
 // @include		  http://reddit.com/*
 // @include       https://*.reddit.com/*
@@ -20,7 +20,7 @@
 
 // new design for new reddit
 
-var version = '16';
+var version = '17';
 
 
 class NewRedditSelectors {
@@ -371,7 +371,7 @@ class SynccitSender {
 
 		this.queue = [];
 
-		this.client = 'synccit-extension v1.' + this.getManifestVersion();
+		this.client = 'synccit-extension v1.' + version;
 
 		this.loadItems();
 
@@ -380,14 +380,6 @@ class SynccitSender {
 		this.intervalId = setInterval(() => { 
 			this.sendItems();
 		}, 10000);
-	}
-
-	getManifestVersion () {
-		if (typeof(chrome) !== 'undefined') {
-			return chrome.runtime.getManifest().version;
-		} else {
-			return version;
-		}
 	}
 
 	// pull the current queue from localstorage
@@ -466,20 +458,12 @@ class Synccit {
 
 		this.setup = false;
 
-		this.client = 'synccit-extension v1.' + this.getManifestVersion();
+		this.client = 'synccit-extension v1.' + version;
 
 		this.settings = new SynccitSettings(this);
 
 		this.synccitSender = null;
 
-	}
-
-	getManifestVersion () {
-		if (typeof(chrome) !== 'undefined') {
-			return chrome.runtime.getManifest().version;
-		} else {
-			return version;
-		}
 	}
 
 	setLogin (username, auth, api) {
